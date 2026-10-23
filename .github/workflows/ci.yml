@@ -17,9 +17,12 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: android-actions/setup-android@v3
-      - name: SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;36.1.0" > /dev/null
+      - name: Android SDK packages
+        run: |
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" > /dev/null
 
       - uses: gradle/actions/setup-gradle@v4
 
