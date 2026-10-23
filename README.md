@@ -8,9 +8,11 @@
 给 **已 Root 的安卓手机**（KernelSU / Magisk / APatch / SukiSU）用的 mihomo 透明代理方案：
 **App 图形界面 + mihomo 内核（构建时拉取最新 release）+ Root 级 TUN 全局接管**，不占用系统 VPN 入口，状态栏不会出现 VPN 图标，也不会被"检测 VPN"的 App 识别。
 
-> 参考并改进了 GitHub 上的 [MagicNet](https://github.com/LIghtJUNction/MagicNet) 与 [NetProxy-Magisk](https://github.com/Fanju6/NetProxy-Magisk)：
-> 它们的思路很好（Root 级 TUN、无 VPN 槽位），但都是 sing-box 内核 + 命令行/配置文件操作，配置繁琐、节点要自己拼、出问题只能看日志。
-> 本项目换成 **mihomo（Clash.Meta）内核**，把全部操作收进一个原生 Compose App：订阅一键导入、节点整合去重、自动测速选优、热重载开关，不重启进程。
+> **为什么自己写一个**：之前用过 [MagicNet](https://github.com/LIghtJUNction/MagicNet) 和
+> [NetProxy-Magisk](https://github.com/Fanju6/NetProxy-Magisk)，"Root 级 TUN、不占 VPN 槽位"的思路很好，
+> 但它们基于 sing-box 内核：拿 mihomo / Clash 订阅去用要先转换，切换订阅慢，换 Wi-Fi 或移动网络后连接经常卡住。
+> 所以这里换成 **mihomo（Clash.Meta）内核**，把订阅、节点、分流、测速全部收进一个原生 Compose App：
+> 订阅一键导入、节点整合去重、自动测速选优、热重载开关，不重启进程。
 
 ---
 
@@ -178,9 +180,23 @@ WebUI 的独立运行时靠这几个文件：
 1. WebUI 走 `gen.sh` 生成 **provider 结构**的配置（proxy-providers + 分组 + GEOSITE 规则），适合纯模块用户；
    如果用 App 切换订阅，App 会用自己的配置覆盖 `config.yaml`，两者择一即可。
 2. WebUI 订阅只接受 **Clash YAML** 订阅（分享链接的转换在 App 里做）。
-3. 模块安装不会覆盖你已经升级过的内核版本（只有全新安装才释放内置 1.19.14）。
+3. 模块安装不会覆盖你已经升级过的内核版本（只有全新安装才释放随包内核，当前 v1.19.32）。
 4. 升级内核的三种方式：
    - App：设置 → 检查更新 → 立即更新；
    - WebUI：概览 → 更新内核（调用 `update_core.sh`）；
    - 终端：`su -c 'sh /data/adb/mihomo_tproxy/update_core.sh'`。
    三者都走 GitHub release（直连 API 常被限流，脚本内置 `gh-proxy.com` 镜像），下载 .gz → 解压 → 替换 → 重启。
+
+## 10. 致谢
+
+这个项目基本是站在别人肩膀上：
+
+- **[mihomo / Clash.Meta](https://github.com/MetaCubeX/mihomo)** —— 核心内核，整套透明代理都建立在它之上
+- **[meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat)** —— 用到的 geoip.metadb / geosite.dat
+- **[MagicNet](https://github.com/LIghtJUNction/MagicNet)** —— Root 级 TUN、不占 VPN 槽位的早期实践，最初思路来源
+- **[NetProxy-Magisk](https://github.com/Fanju6/NetProxy-Magisk)** —— 同类方案参考
+- **[KernelSU](https://github.com/tiann/KernelSU)** / **[SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra)** —— 模块与 WebUI 的运行环境
+- **[Jetpack Compose](https://developer.android.com/jetpack/compose)** —— 界面
+- 以及所有提 issue、反馈问题、帮忙测试的朋友
+
+如果这里漏了你的项目，提个 issue 或 PR，我补上。

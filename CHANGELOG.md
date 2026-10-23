@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.2
+
+- App 桌面名称改为 **TunClash**，发布产物统一为 `TunClash-*`
+- README：修正内核版本说明、重写缘起段落、新增致谢名单
+
+
 ## v1.2.1
 
 - 项目更名为 **TunClash**（仓库地址同步更新）

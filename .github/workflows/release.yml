@@ -38,8 +38,8 @@ jobs:
       - name: Package artifacts
         run: |
           TAG="${GITHUB_REF_NAME:-dev}"
-          cp Android/app/build/outputs/apk/debug/app-debug.apk "MihomoTProxy-${TAG}.apk"
-          (cd module && zip -qr "../MihomoTProxy-Module-${TAG}.zip" .)
+          cp Android/app/build/outputs/apk/debug/app-debug.apk "TunClash-${TAG}.apk"
+          (cd module && zip -qr "../TunClash-Module-${TAG}.zip" .)
           python3 - "$TAG" <<'PY'
           import json, os, sys
           tag = sys.argv[1]
@@ -50,16 +50,16 @@ jobs:
           data = {
               "version": tag,
               "versionCode": vc,
-              "zipUrl": f"https://github.com/{repo}/releases/download/{tag}/MihomoTProxy-Module-{tag}.zip",
+              "zipUrl": f"https://github.com/{repo}/releases/download/{tag}/TunClash-Module-{tag}.zip",
               "changelog": f"https://raw.githubusercontent.com/{repo}/main/CHANGELOG.md",
           }
           json.dump(data, open("update.json", "w"), ensure_ascii=False, indent=2)
           PY
-          ls -lh MihomoTProxy-* update.json
+          ls -lh TunClash-* update.json
 
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            MihomoTProxy-*.apk
-            MihomoTProxy-Module-*.zip
+            TunClash-*.apk
+            TunClash-Module-*.zip
             update.json

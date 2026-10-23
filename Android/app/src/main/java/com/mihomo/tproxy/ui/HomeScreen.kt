@@ -73,7 +73,7 @@ fun HomeScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "MIHOMO",
+                    "TUNCLASH",
                     color = Palette.text,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
