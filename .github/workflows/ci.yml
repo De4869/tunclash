@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: cd Android && ./gradlew assembleDebug --no-daemon --console=plain
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-debug
           path: Android/app/build/outputs/apk/debug/app-debug.apk
