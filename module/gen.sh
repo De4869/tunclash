@@ -24,10 +24,10 @@ if [ -f "$LIST" ]; then
   while IFS='|' read -r name url; do
     [ -z "$name" ] && continue
     f="sub${i}.yaml"
-    if [ -f "$DATA/$f" ]; then
+    if [ -f "$DATA/$f" ] && grep -q "proxies:" "$DATA/$f"; then
       USED="$USED sub$i"
-      i=$((i+1))
     fi
+    i=$((i+1))
   done < "$LIST"
 fi
 
