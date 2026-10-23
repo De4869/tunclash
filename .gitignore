@@ -1,0 +1,25 @@
+# ---- secrets / local only ----
+_tools/
+dist/
+Android/local.properties
+*.keystore
+*.jks
+
+# ---- build output ----
+Android/.gradle/
+Android/.kotlin/
+Android/build/
+Android/app/build/
+*.apk
+*.zip
+*.iml
+.idea/
+
+# ---- large binaries (fetch with scripts/fetch-deps.sh) ----
+module/bin/
+module/geo/
+Android/app/src/main/assets/mihomo.gz
+Android/app/src/main/assets/geoip.metadb
+Android/app/src/main/assets/geosite.dat
+
+docs/screenshots/

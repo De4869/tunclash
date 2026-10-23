@@ -1,0 +1,151 @@
+#!/system/bin/sh
+# Standalone config generator for the module (no app required).
+# Reads $DIR/subs.list (name|url per line) and $DIR/data/subN.yaml provider files.
+DIR=/data/adb/mihomo_tproxy
+DATA=$DIR/data
+LIST=$DIR/subs.list
+SECRETFILE=$DIR/secret
+CFG=$DATA/config.yaml
+TMP=$DATA/.config.tmp
+
+mkdir -p $DATA
+
+SECRET=$(cat $SECRETFILE 2>/dev/null)
+if [ -z "$SECRET" ]; then
+  SECRET=$(cat /proc/sys/kernel/random/uuid | tr -d '-' | head -c 16)
+  echo "$SECRET" > $SECRETFILE
+  chmod 600 $SECRETFILE
+fi
+
+USED=""
+USECSV=""
+i=0
+if [ -f "$LIST" ]; then
+  while IFS='|' read -r name url; do
+    [ -z "$name" ] && continue
+    f="sub${i}.yaml"
+    if [ -f "$DATA/$f" ]; then
+      USED="$USED sub$i"
+      i=$((i+1))
+    fi
+  done < "$LIST"
+fi
+
+USECSV=$(echo $USED | tr ' ' ',')
+{
+  echo "mixed-port: 7890"
+  echo "allow-lan: false"
+  echo "bind-address: 127.0.0.1"
+  echo "mode: rule"
+  echo "log-level: info"
+  echo "ipv6: false"
+  echo "unified-delay: true"
+  echo "tcp-concurrent: true"
+  echo "find-process-mode: strict"
+  echo "external-controller: 127.0.0.1:9090"
+  echo "secret: \"$SECRET\""
+  echo "geodata-mode: false"
+  echo "geo-auto-update: false"
+  echo "profile:"
+  echo "  store-selected: true"
+  echo "  store-fake-ip: true"
+  echo "sniffer:"
+  echo "  enable: true"
+  echo "  force-dns-mapping: true"
+  echo "  parse-pure-ip: true"
+  echo "  override-destination: true"
+  echo "  sniff:"
+  echo "    TLS:"
+  echo "      ports: [443, 8443]"
+  echo "    HTTP:"
+  echo "      ports: [80, 8080-8880]"
+  echo "    QUIC:"
+  echo "      ports: [443, 8443]"
+  echo "tun:"
+  echo "  enable: true"
+  echo "  stack: mixed"
+  echo "  device: mihomo0"
+  echo "  auto-route: true"
+  echo "  auto-detect-interface: true"
+  echo "  dns-hijack:"
+  echo "    - any:53"
+  echo "  mtu: 9000"
+  echo "dns:"
+  echo "  enable: true"
+  echo "  listen: 0.0.0.0:1053"
+  echo "  ipv6: false"
+  echo "  enhanced-mode: fake-ip"
+  echo "  fake-ip-range: 198.18.0.1/16"
+  echo "  fake-ip-filter:"
+  echo "    - \"*.lan\""
+  echo "    - \"*.local\""
+  echo "    - \"+.msftconnecttest.com\""
+  echo "    - \"+.msftncsi.com\""
+  echo "  default-nameserver:"
+  echo "    - 223.5.5.5"
+  echo "    - 119.29.29.29"
+  echo "  proxy-server-nameserver:"
+  echo "    - 223.5.5.5"
+  echo "    - 119.29.29.29"
+  echo "  nameserver:"
+  echo "    - \"https://dns.alidns.com/dns-query\""
+  echo "    - \"https://doh.pub/dns-query\""
+  echo "    - 223.5.5.5"
+  echo ""
+  if [ -n "$USED" ]; then
+    echo "proxy-providers:"
+    j=0
+    for u in $USED; do
+      echo "  $u:"
+      echo "    type: file"
+      echo "    path: ./$u.yaml"
+      echo "    health-check:"
+      echo "      enable: true"
+      echo "      url: http://www.gstatic.com/generate_204"
+      echo "      interval: 300"
+      j=$((j+1))
+    done
+    echo "proxy-groups:"
+    echo "  - name: 🚀 节点选择"
+    echo "    type: select"
+    echo "    proxies: [♻️ 自动选择, 🔯 故障转移, DIRECT]"
+    echo "    use: [$USECSV]"
+    echo "  - name: ♻️ 自动选择"
+    echo "    type: url-test"
+    echo "    url: http://www.gstatic.com/generate_204"
+    echo "    interval: 300"
+    echo "    tolerance: 50"
+    echo "    lazy: false"
+    echo "    use: [$USECSV]"
+    echo "  - name: 🔯 故障转移"
+    echo "    type: fallback"
+    echo "    url: http://www.gstatic.com/generate_204"
+    echo "    interval: 300"
+    echo "    use: [$USECSV]"
+    for r in "🇭🇰 香港:香港|HK|Hong Kong" "🇯🇵 日本:日本|JP|Japan|东京|大阪" "🇸🇬 新加坡:新加坡|SG|Singapore|狮城" "🇺🇸 美国:美国|US|United States|洛杉矶|圣何塞" "🇹🇼 台湾:台湾|TW|Taiwan|台北" "🇰🇷 韩国:韩国|KR|Korea|首尔" "🇬🇧 英国:英国|UK|London|伦敦" "🇩🇪 德国:德国|DE|Germany|法兰克福" "🇫🇷 法国:法国|FR|France|巴黎" "🇳🇱 荷兰:荷兰|NL|Amsterdam|阿姆斯特丹"; do
+      n=${r%%:*}
+      f=${r#*:}
+      echo "  - name: $n"
+      echo "    type: url-test"
+      echo "    url: http://www.gstatic.com/generate_204"
+      echo "    interval: 300"
+      echo "    tolerance: 50"
+      echo "    use: [$USECSV]"
+      echo "    filter: \"$f\""
+    done
+    echo "rules:"
+    echo "  - GEOSITE,geolocation-!cn,🚀 节点选择"
+    echo "  - GEOSITE,cn,DIRECT"
+    echo "  - GEOIP,CN,DIRECT"
+    echo "  - MATCH,🚀 节点选择"
+  else
+    echo "proxies: []"
+    echo "proxy-groups: []"
+    echo "rules:"
+    echo "  - MATCH,DIRECT"
+  fi
+} > "$TMP"
+
+mv -f "$TMP" "$CFG"
+chmod 644 "$CFG"
+echo "config written: $CFG (providers:$USED)"

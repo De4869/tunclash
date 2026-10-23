@@ -1,0 +1,57 @@
+name: 问题反馈
+description: 报告一个 bug 或异常现象
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！信息越全，定位越快。日志里请**不要**贴订阅地址和节点密码。
+  - type: input
+    id: app-version
+    attributes:
+      label: App 版本
+      description: 设置页底部可以看到（例如 1.1.0）
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: 使用方式
+      options:
+        - App + 模块
+        - 只用模块（WebUI）
+        - 只用 App（应用内安装内核）
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 设备 / 系统 / Root 方案
+      placeholder: "Xiaomi 15 / Android 17 / KernelSU (SukiSU)"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 现象与复现步骤
+      placeholder: |
+        1. 打开 …
+        2. 点击 …
+        3. 期望 …，实际 …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 内核日志（设置 → 查看内核日志 → 右上角复制）
+      render: shell
+  - type: checkboxes
+    id: selfcheck
+    attributes:
+      label: 自查
+      options:
+        - label: 订阅在其他客户端可以正常使用
+        - label: 已尝试「重载配置」或重启内核
+        - label: 日志中不含订阅地址 / 密码

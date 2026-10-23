@@ -1,0 +1,259 @@
+package com.mihomo.tproxy.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.mihomo.tproxy.AppViewModel
+import com.mihomo.tproxy.UiState
+
+@Composable
+fun SettingsScreen(
+    state: UiState,
+    vm: AppViewModel,
+    onOpenApps: () -> Unit,
+    onOpenLogs: () -> Unit
+) {
+    val s = state.settings
+    var dialog by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
+    ) {
+        Spacer(Modifier.height(14.dp))
+        Text("设置", color = Palette.text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("分流 · DNS · 内核 · 自启", color = Palette.textFaint, fontSize = 11.5.sp)
+
+        Spacer(Modifier.height(16.dp))
+        SectionLabel("代理")
+        GlassCard(Modifier.fillMaxWidth()) {
+            Column {
+                SettingRow("默认模式", modeLabel(s.mode)) {
+                    Text(modeLabel(s.mode), color = Palette.primary, fontSize = 12.5.sp)
+                }
+                Divider()
+                SettingRow("分流规则", ruleLabel(s.rulePreset), onClick = { dialog = "rule" })
+                Divider()
+                SettingRow("分应用代理", if (!s.perAppEnabled) "关闭" else (if (s.perAppWhitelist) "白名单 " else "黑名单 ") + s.perAppPackages.size + " 个应用") {
+                    Switch(
+                        checked = s.perAppEnabled,
+                        onCheckedChange = { vm.applySettings(s.copy(perAppEnabled = it)) },
+                        colors = switchColors()
+                    )
+                }
+                if (s.perAppEnabled) {
+                    Divider()
+                    SettingRow("管理应用", "选择需要" + (if (s.perAppWhitelist) "代理" else "直连") + "的应用", onClick = onOpenApps)
+                    Divider()
+                    SettingRow("名单模式", if (s.perAppWhitelist) "白名单（仅选中走代理）" else "黑名单（选中直连）") {
+                        Switch(
+                            checked = s.perAppWhitelist,
+                            onCheckedChange = { vm.applySettings(s.copy(perAppWhitelist = it)) },
+                            colors = switchColors()
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SectionLabel("网络")
+        GlassCard(Modifier.fillMaxWidth()) {
+            Column {
+                SettingRow("广告拦截", if (s.adBlock) "已开启 · 内置 GEOSITE + " + s.adSources.size + " 个在线规则" else "拦截常见广告与追踪域名") {
+                    Switch(checked = s.adBlock, onCheckedChange = { vm.applySettings(s.copy(adBlock = it)) }, colors = switchColors())
+                }
+                if (s.adBlock) {
+                    Divider()
+                    SettingRow("在线规则源", if (s.adSources.isEmpty()) "未添加（仅用内置规则）" else s.adSources.size.toString() + " 个规则源", onClick = { dialog = "ads" })
+                }
+                Divider()
+                SettingRow("DNS", dnsLabel(s.dnsPreset), onClick = { dialog = "dns" })
+                Divider()
+                SettingRow("IPv6", if (s.ipv6) "已开启（需要节点支持）" else "已关闭，避免泄漏") {
+                    Switch(checked = s.ipv6, onCheckedChange = { vm.applySettings(s.copy(ipv6 = it)) }, colors = switchColors())
+                }
+                Divider()
+                SettingRow("TUN 栈", s.tunStack, onClick = { dialog = "stack" })
+                Divider()
+                SettingRow("MTU", s.mtu.toString(), onClick = { dialog = "mtu" })
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SectionLabel("内核")
+        GlassCard(Modifier.fillMaxWidth()) {
+            Column {
+                SettingRow("状态", if (state.coreRunning) "运行中 · " + state.version else "未运行") {
+                    Pill(if (state.coreRunning) "RUNNING" else "STOPPED", if (state.coreRunning) Palette.ok else Palette.textFaint)
+                }
+                Divider()
+                SettingRow("检查更新", "当前内核 " + (state.version.ifBlank { com.mihomo.tproxy.core.CoreManager.VERSION_TAG }), onClick = { vm.checkUpdate() })
+                if (state.updateVersion.isNotBlank()) {
+                    Divider()
+                    SettingRow(
+                        "发现新内核 " + state.updateVersion,
+                        if (state.updating) "下载并安装中 " + state.updateProgress + "%" else "点击立即更新（走当前代理下载）",
+                        onClick = { if (!state.updating) vm.updateCore() }
+                    )
+                }
+                Divider()
+                SettingRow("日志等级", s.logLevel, onClick = { dialog = "log" })
+                Divider()
+                SettingRow("查看内核日志", "实时输出", onClick = onOpenLogs)
+                Divider()
+                SettingRow("开机自启", "开机后延迟启动内核") {
+                    Switch(checked = s.bootStart, onCheckedChange = { vm.setBootStart(it) }, colors = switchColors())
+                }
+                Divider()
+                SettingRow("重启内核", "重新加载并重启 mihomo", onClick = { vm.restartCore() })
+                Divider()
+                SettingRow("停止内核", "停止后网络恢复直连", onClick = { vm.stopCore() })
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SectionLabel("关于")
+        GlassCard(Modifier.fillMaxWidth()) {
+            Column {
+                SettingRow("Mihomo 透明代理", "v1.0.0", onClick = {})
+                Divider()
+                SettingRow("内核版本", state.version.ifBlank { "—" }, onClick = {})
+                Divider()
+                SettingRow("运行方式", if (state.rootOk) "Root TUN · 无 VPN 图标" else "需要 Root 权限", onClick = {})
+            }
+        }
+        Spacer(Modifier.height(110.dp))
+    }
+
+    if (dialog == "ads") {
+        com.mihomo.tproxy.ui.AdSourcesDialog(s, vm) { dialog = null }
+    }
+
+    when (dialog) {
+        "rule" -> ChoiceDialog(
+            "分流规则", listOf(
+                "smart" to "智能分流（国内直连 / 国外代理）",
+                "global" to "全局代理",
+                "direct" to "全局直连"
+            ), s.rulePreset, { dialog = null }
+        ) { vm.applySettings(s.copy(rulePreset = it)) }
+
+        "dns" -> ChoiceDialog(
+            "DNS", listOf(
+                "cn" to "国内优化（阿里 / 腾讯 DoH）",
+                "google" to "Google DNS",
+                "cf" to "Cloudflare DNS"
+            ), s.dnsPreset, { dialog = null }
+        ) { vm.applySettings(s.copy(dnsPreset = it)) }
+
+        "stack" -> ChoiceDialog(
+            "TUN 栈", listOf(
+                "mixed" to "Mixed（推荐）",
+                "gvisor" to "gVisor（兼容性最好）",
+                "system" to "System（性能最好）"
+            ), s.tunStack, { dialog = null }
+        ) { vm.applySettings(s.copy(tunStack = it)) }
+
+        "mtu" -> ChoiceDialog(
+            "MTU", listOf("9000" to "9000（推荐）", "1500" to "1500（兼容性）", "4064" to "4064"),
+            s.mtu.toString(), { dialog = null }
+        ) { vm.applySettings(s.copy(mtu = it.toIntOrNull() ?: 9000)) }
+
+        "log" -> ChoiceDialog(
+            "日志等级", listOf("info" to "info", "warning" to "warning", "error" to "error", "debug" to "debug"),
+            s.logLevel, { dialog = null }
+        ) { vm.applySettings(s.copy(logLevel = it)) }
+    }
+}
+
+@Composable
+fun Divider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).padding(vertical = 0.dp).background(Color.White.copy(alpha = 0.05f)))
+}
+
+@Composable
+fun SettingRow(
+    title: String,
+    subtitle: String? = null,
+    onClick: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Palette.text, fontSize = 13.5.sp)
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(subtitle, color = Palette.textFaint, fontSize = 10.5.sp)
+            }
+        }
+        if (trailing != null) trailing()
+        if (onClick != null) {
+            Spacer(Modifier.width(4.dp))
+            Icon(Icons.Rounded.ChevronRight, null, tint = Palette.textFaint, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+fun switchColors() = SwitchDefaults.colors(
+    checkedThumbColor = Color.White,
+    checkedTrackColor = Palette.primary,
+    uncheckedThumbColor = Palette.textFaint,
+    uncheckedTrackColor = Color(0xFF232A3A),
+    uncheckedBorderColor = Color.Transparent
+)
+
+private fun modeLabel(m: String) = when (m) {
+    "global" -> "全局代理"
+    "direct" -> "全局直连"
+    else -> "规则模式"
+}
+
+private fun ruleLabel(r: String) = when (r) {
+    "global" -> "全局代理"
+    "direct" -> "全局直连"
+    else -> "智能分流"
+}
+
+private fun dnsLabel(d: String) = when (d) {
+    "google" -> "Google"
+    "cf" -> "Cloudflare"
+    "custom" -> "自定义"
+    else -> "国内优化"
+}

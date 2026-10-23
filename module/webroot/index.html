@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mihomo TProxy</title>
+<style>
+  :root{
+    --bg:#05070d; --card:rgba(255,255,255,.055); --line:rgba(255,255,255,.09);
+    --text:#e9edf7; --dim:#8a93a8; --faint:#5a6377;
+    --blue:#5b8cff; --cyan:#22d3ee; --ok:#34d399; --warn:#fbbf24; --bad:#fb7185;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,"Noto Sans SC","PingFang SC",system-ui,sans-serif}
+  body{min-height:100vh;padding:18px 16px 28px;
+    background:
+      radial-gradient(900px 400px at 10% -5%, rgba(91,140,255,.18), transparent 60%),
+      radial-gradient(700px 380px at 100% 35%, rgba(34,211,238,.10), transparent 60%),
+      linear-gradient(180deg,#05070d,#0a0e18 55%,#05070d)}
+  .row{display:flex;align-items:center;gap:10px}
+  .grow{flex:1;min-width:0}
+  .head h1{margin:0;font-size:20px;letter-spacing:3px;font-weight:900}
+  .head p{margin:2px 0 0;font-size:10.5px;color:var(--faint);letter-spacing:1.2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+    font-size:11px;font-weight:600;border:1px solid}
+  .dot{width:6px;height:6px;border-radius:999px;background:currentColor}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:14px;margin-top:12px;backdrop-filter:blur(6px)}
+  .orb{width:168px;height:168px;border-radius:999px;margin:8px auto 0;display:flex;
+    align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);
+    background:radial-gradient(circle at 50% 35%, rgba(91,140,255,.30), rgba(91,140,255,.05) 60%, transparent 70%);
+    transition:.35s;position:relative}
+  .orb.on{background:radial-gradient(circle at 50% 35%, #5b8cff, #2a4bd8 62%, #1a2a7a);
+    box-shadow:0 0 42px rgba(91,140,255,.45), inset 0 0 30px rgba(255,255,255,.12)}
+  .orb .ico{font-size:44px;line-height:1}
+  .orb .lbl{position:absolute;bottom:36px;font-size:12px;color:rgba(255,255,255,.9)}
+  .center{text-align:center}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+  .stat small{color:var(--faint);font-size:10.5px}
+  .stat b{display:block;font-size:16px;margin-top:4px;font-family:ui-monospace,Menlo,monospace}
+  .chips{display:flex;gap:8px;margin-top:12px}
+  .gchips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+  .gchip{flex:0 0 auto;white-space:nowrap;padding:8px 12px;border-radius:12px;font-size:12px;
+    border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim)}
+  .gchip.on{background:rgba(91,140,255,.22);color:#fff;border-color:rgba(91,140,255,.5);font-weight:600}
+  .chip{flex:1;text-align:center;padding:10px;border-radius:14px;font-size:12.5px;
+    border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim)}
+  .chip.on{background:linear-gradient(90deg,#5b8cff,#3f6fe8);color:#fff;border-color:transparent;font-weight:600}
+  .tabs{display:flex;gap:6px;margin-top:16px;background:rgba(255,255,255,.04);
+    border:1px solid var(--line);border-radius:16px;padding:5px}
+  .tab{flex:1;text-align:center;padding:9px;border-radius:12px;font-size:12.5px;color:var(--dim)}
+  .tab.on{background:rgba(91,140,255,.22);color:#fff;font-weight:600}
+  .list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}
+  .item.sel{border-color:rgba(91,140,255,.5);background:rgba(91,140,255,.12)}
+  .name{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sub{font-size:9.5px;color:var(--faint);margin-top:2px}
+  .badge{font-size:10px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--dim)}
+  .g{color:var(--ok)} .y{color:var(--warn)} .r{color:var(--bad)}
+  .btn{padding:9px 14px;border-radius:12px;font-size:12px;font-weight:600;
+    background:linear-gradient(90deg,#5b8cff,#3f6fe8);color:#fff;border:0}
+  .btn.ghost{background:rgba(255,255,255,.06);color:var(--dim)}
+  input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.04);color:var(--text);font-size:12.5px;outline:none}
+  .scroll{max-height:46vh;overflow:auto;-webkit-overflow-scrolling:touch}
+  pre{margin:0;font-size:10.5px;line-height:1.5;color:var(--dim);white-space:pre-wrap;word-break:break-all}
+  .empty{color:var(--faint);font-size:12px;text-align:center;padding:26px 0}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#1a2136;border:1px solid rgba(255,255,255,.12);color:var(--text);
+    padding:11px 16px;border-radius:14px;font-size:12px;opacity:0;transition:.25s;max-width:86vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+  <div class="row head">
+    <div class="grow">
+      <h1>MIHOMO</h1>
+      <p>透明代理 · TPROXY · WebUI</p>
+    </div>
+    <span id="pill" class="pill" style="color:var(--faint);border-color:rgba(255,255,255,.12)">
+      <i class="dot"></i><span id="pillText">检测中</span>
+    </span>
+  </div>
+
+  <div class="card center">
+    <div id="orb" class="orb" onclick="toggle()">
+      <div class="ico">⏻</div>
+      <div class="lbl" id="orbText">未连接</div>
+    </div>
+    <div style="margin-top:12px;font-size:13.5px;font-weight:600" id="stateText">读取中…</div>
+    <div style="margin-top:4px;font-size:11px;color:var(--faint)" id="subText"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><small>↑ 上传</small><b style="color:var(--cyan)" id="up">0 B/s</b><small id="upTotal">累计 0 B</small></div>
+    <div class="stat"><small>↓ 下载</small><b style="color:var(--ok)" id="down">0 B/s</b><small id="downTotal">累计 0 B</small></div>
+  </div>
+
+  <div class="chips">
+    <div class="chip" data-mode="rule" onclick="setMode('rule')">规则</div>
+    <div class="chip" data-mode="global" onclick="setMode('global')">全局</div>
+    <div class="chip" data-mode="direct" onclick="setMode('direct')">直连</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on" data-tab="home" onclick="tab('home')">概览</div>
+    <div class="tab" data-tab="nodes" onclick="tab('nodes')">节点</div>
+    <div class="tab" data-tab="subs" onclick="tab('subs')">订阅</div>
+    <div class="tab" data-tab="logs" onclick="tab('logs')">日志</div>
+  </div>
+
+  <div id="view"></div>
+  <div id="toast" class="toast"></div>
+
+<script>
+const DIR = "/data/adb/mihomo_tproxy";
+const API = "http://127.0.0.1:9090";
+const KSU = window.ksu || window.kernelsu || null;
+let secret = "";
+let state = { running:false, mode:"rule", groups:[], nodes:{}, current:"", tab:"home", upTotal:0, downTotal:0 };
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+async function sh(cmd){
+  if(!KSU) throw new Error("请在 KernelSU 管理器的 WebUI 中打开");
+  const r = await KSU.exec(cmd);
+  if (typeof r === "string") return r.trim();
+  return ((r && (r.stdout||"")) || "").trim();
+}
+
+function b64(s){
+  return btoa(unescape(encodeURIComponent(s)));
+}
+
+async function writeFile(path, text){
+  const data = b64(text);
+  // base64 is safe inside single quotes
+  await sh("printf '%s' '" + data + "' | base64 -d > '" + path + "'");
+}
+
+async function api(path, method, body){
+  let cmd = "curl -s -m 6 -H 'Authorization: Bearer " + secret + "' ";
+  if (method && method !== "GET"){
+    if (body !== undefined){
+      await writeFile("/data/local/tmp/.mihomo_body.json", body);
+      cmd += "-X " + method + " -H 'Content-Type: application/json' --data-binary @/data/local/tmp/.mihomo_body.json ";
+    } else {
+      cmd += "-X " + method + " ";
+    }
+  }
+  cmd += "'" + API + path + "'";
+  const out = await sh(cmd);
+  if(!out) return null;
+  try { return JSON.parse(out); } catch(e){ return null; }
+}
+
+async function loadSecret(){
+  secret = await sh("cat " + DIR + "/secret 2>/dev/null");
+  if(!secret){
+    secret = await sh("grep '^secret:' " + DIR + "/data/config.yaml | head -1 | sed 's/.*: *//' | tr -d '\"'");
+  }
+}
+
+async function refresh(){
+  try{
+    await loadSecret();
+    const pid = await sh("sh " + DIR + "/ctl.sh status");
+    state.running = pid.indexOf("running") >= 0;
+    const ver = state.running ? await api("/version") : null;
+    const cfg = state.running ? await api("/configs") : null;
+    state.mode = (cfg && cfg.mode) || "rule";
+    const px = state.running ? await api("/proxies") : null;
+    if (px && px.proxies){
+      state.groups = []; state.nodes = {};
+      for (const k in px.proxies){
+        const p = px.proxies[k];
+        if (p.all){ state.groups.push(p); }
+        else { state.nodes[k] = p; }
+      }
+      state.groups.sort((a,b)=>(a.name==="🚀 节点选择"?-1:0)-(b.name==="🚀 节点选择"?-1:0));
+      const g = state.groups.find(x=>x.name==="🚀 节点选择") || state.groups.find(x=>x.type==="Selector") || state.groups[0];
+      state.current = g ? g.now : "";
+    }
+    renderStatus(ver);
+  }catch(e){
+    state.running = false;
+    renderStatus(null);
+  }
+}
+
+function fmtBytes(v){
+  v = Number(v)||0;
+  if (v < 1024) return v + " B";
+  if (v < 1048576) return (v/1024).toFixed(1) + " KB";
+  if (v < 1073741824) return (v/1048576).toFixed(1) + " MB";
+  return (v/1073741824).toFixed(2) + " GB";
+}
+
+function renderStatus(ver){
+  const pill = document.getElementById("pill"), orb = document.getElementById("orb");
+  const paused = state.running && state.mode === "direct";
+  const color = !state.running ? "var(--faint)" : paused ? "var(--warn)" : "var(--ok)";
+  pill.style.color = color; pill.style.borderColor = color + "55";
+  document.getElementById("pillText").textContent = !state.running ? "未运行" : paused ? "已暂停" : "运行中";
+  orb.classList.toggle("on", state.running && !paused);
+  document.getElementById("orbText").textContent = state.running ? (paused ? "已暂停" : "已连接") : "未连接";
+  document.getElementById("stateText").textContent = !state.running ? "内核未运行" : paused ? "内核运行中 · 流量直连" : "正在接管全部流量";
+  document.getElementById("subText").textContent = ver ? ("内核 " + (ver.version||"") + " · 节点 " + Object.keys(state.nodes).length) : "点击圆环启动";
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on", c.dataset.mode === state.mode));
+}
+
+async function toggle(){
+  try{
+    if (!state.running){ toast("启动中…"); await sh("sh " + DIR + "/ctl.sh start"); }
+    else {
+      const next = state.mode === "direct" ? "rule" : "direct";
+      await api("/configs", "PATCH", JSON.stringify({mode: next}));
+      toast(next === "direct" ? "已暂停（内核仍在运行）" : "已恢复代理");
+    }
+  }catch(e){ toast("操作失败：" + e.message); }
+  setTimeout(refresh, 900);
+}
+
+async function setMode(m){
+  try{ await api("/configs", "PATCH", JSON.stringify({mode:m})); toast("已切换模式"); }catch(e){ toast("失败"); }
+  setTimeout(refresh, 500);
+}
+
+function tab(t){
+  state.tab = t;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x.dataset.tab===t));
+  render();
+}
+
+function render(){
+  const v = document.getElementById("view");
+  if (state.tab === "home") return renderHome(v);
+  if (state.tab === "nodes") return renderNodes(v);
+  if (state.tab === "subs") return renderSubs(v);
+  if (state.tab === "logs") return renderLogs(v);
+}
+
+function renderHome(v){
+  const cur = state.current || "未选择";
+  v.innerHTML = `
+    <div class="card">
+      <div class="row"><div class="grow">
+        <div style="font-size:10.5px;color:var(--faint)">当前节点</div>
+        <div class="name" style="font-size:15px;margin-top:4px;font-weight:600">${escapeHtml(cur)}</div>
+        <div class="sub">${state.groups.length} 个策略组 · ${Object.keys(state.nodes).length} 个节点</div>
+      </div><div class="badge">${state.running ? "TUN" : "OFF"}</div></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <button class="btn ghost" onclick="toggle()">${state.running ? "暂停/恢复" : "启动内核"}</button>
+        <button class="btn ghost" onclick="restart()">重启内核</button>
+        <button class="btn ghost" onclick="updateCore()">更新内核</button>
+        <button class="btn ghost" onclick="refresh().then(render)">刷新</button>
+      </div>
+      <div style="margin-top:10px;font-size:10.5px;color:var(--faint)">WebUI 与 App 共用同一套运行时，可任选其一操作。</div>
+    </div>`;
+}
+
+function renderNodes(v){
+  const groups = state.groups;
+  const sel = encodeURIComponent(window.__group || (groups[0] && groups[0].name) || "");
+  v.innerHTML = `<div class="gchips">${groups.map(g=>
+      `<div class="gchip ${(window.__group||groups[0].name)===g.name?"on":""}" onclick="pickGroup('${encodeURIComponent(g.name)}')">${escapeHtml(g.name)}</div>`).join("")}
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <div style="font-size:10.5px;color:var(--faint)">点击节点即可切换</div>
+      <button class="btn ghost" onclick="speedTest()">测速本组</button>
+    </div>
+    <div class="list scroll" id="nodeList"></div>`;
+  const g = groups.find(x=>x.name === (window.__group || (groups[0]&&groups[0].name))) || groups[0];
+  const list = document.getElementById("nodeList");
+  if (!g){ list.innerHTML = '<div class="empty">没有可用策略组</div>'; return; }
+  const names = (g.all||[]).filter(n=>state.nodes[n]);
+  if (!names.length){ list.innerHTML = '<div class="empty">该组暂无节点</div>'; return; }
+  list.innerHTML = names.map(n=>{
+    const p = state.nodes[n] || {};
+    const h = (p.history && p.history.length) ? p.history[p.history.length-1].delay : 0;
+    const cls = h>0 ? (h<200?"g":h<500?"y":"r") : "";
+    return `<div class="item ${g.now===n?"sel":""}" onclick="selectNode('${encodeURIComponent(g.name)}','${encodeURIComponent(n)}')">
+      <div class="grow"><div class="name">${escapeHtml(n)}</div><div class="sub">${escapeHtml(p.type||"")}</div></div>
+      <div class="badge ${cls}">${h>0?h+"ms":"—"}</div></div>`;
+  }).join("");
+}
+
+function pickGroup(name){ window.__group = decodeURIComponent(name); render(); }
+
+async function speedTest(){
+  const g = (state.groups.find(x=>x.name === window.__group) || state.groups[0]);
+  if(!g){ toast("没有策略组"); return; }
+  toast("测速中…");
+  const res = await api("/group/" + encodeURIComponent(g.name) + "/delay?url=" + encodeURIComponent("http://www.gstatic.com/generate_204") + "&timeout=3000");
+  if(!res){ toast("测速失败"); return; }
+  for (const k in res){
+    if (state.nodes[k]) {
+      state.nodes[k].history = [{delay: res[k]}];
+    }
+  }
+  const best = Object.keys(res).filter(k=>res[k]>0).sort((a,b)=>res[a]-res[b])[0];
+  if (best){ await api("/proxies/" + encodeURIComponent(g.name), "PUT", JSON.stringify({name: best})); }
+  toast(best ? ("最快：" + best + " " + res[best] + "ms") : "全部超时");
+  setTimeout(()=>refresh().then(render), 600);
+}
+
+async function selectNode(group, node){
+  try{
+    await api("/proxies/" + group, "PUT", JSON.stringify({name: decodeURIComponent(node)}));
+    toast("已切换节点"); setTimeout(()=>{refresh().then(render);}, 500);
+  }catch(e){ toast("切换失败"); }
+}
+
+async function updateCore(){
+  toast("检查更新…");
+  await sh("nohup sh " + DIR + "/update_core.sh >/dev/null 2>&1 &");
+  let done = false;
+  for (let i = 0; i < 100 && !done; i++){
+    await new Promise(r=>setTimeout(r, 3000));
+    const t = await sh("tail -n 3 " + DIR + "/logs/update.log 2>/dev/null");
+    if (t) {
+      const line = t.trim().split("\n").pop();
+      toast(line);
+      if (/updated to|already latest|failed/.test(t)) done = true;
+    }
+  }
+  refresh().then(render);
+}
+
+async function restart(){
+  toast("重启中…"); await sh("sh " + DIR + "/ctl.sh restart"); setTimeout(()=>refresh().then(render), 1200);
+}
+
+async function renderSubs(v){
+  const raw = await sh("cat " + DIR + "/subs.list 2>/dev/null");
+  const rows = raw.split("\n").filter(Boolean).map(l=>{ const p=l.split("|"); return {name:p[0]||"", url:p[1]||""}; });
+  v.innerHTML = `
+    <div class="card">
+      <div style="font-size:11px;color:var(--faint);margin-bottom:8px">添加 Clash 订阅（下载后作为 provider 使用）</div>
+      <input id="subUrl" placeholder="https://...">
+      <div class="row" style="margin-top:8px">
+        <input id="subName" placeholder="备注名（可选）" style="flex:1">
+        <button class="btn" onclick="addSub()">添加</button>
+      </div>
+    </div>
+    <div class="list">${rows.length?rows.map((r,i)=>`
+      <div class="item"><div class="grow"><div class="name">${escapeHtml(r.name)}</div>
+      <div class="sub">${escapeHtml(r.url)}</div></div>
+      <button class="btn ghost" onclick="delSub(${i})">删除</button></div>`).join(""):'<div class="empty">还没有订阅</div>'}</div>
+    <div class="card"><div class="row" style="justify-content:space-between">
+      <button class="btn ghost" onclick="updateSubs()">更新全部</button>
+      <button class="btn ghost" onclick="refresh().then(render)">刷新</button>
+    </div></div>`;
+}
+
+async function addSub(){
+  const url = (document.getElementById("subUrl").value||"").trim();
+  const name = (document.getElementById("subName").value||"").trim() || ("订阅 " + Date.now().toString().slice(-4));
+  if(!url.startsWith("http")){ toast("请输入 http(s) 订阅链接"); return; }
+  if(/['"\s]/.test(url)){ toast("链接包含非法字符"); return; }
+  toast("下载订阅…");
+  const cnt = Number(await sh("wc -l < " + DIR + "/subs.list 2>/dev/null || echo 0")) || 0;
+  const idx = await sh("ls " + DIR + "/data/sub*.yaml 2>/dev/null | wc -l");
+  const n = Number(idx);
+  const r = await sh("curl -L --max-time 40 -o " + DIR + "/data/sub" + n + ".yaml '" + url + "' && echo ok");
+  if(r.indexOf("ok") < 0){ toast("下载失败"); return; }
+  await sh("printf '%s\\n' '" + name.replace(/'/g,"") + "|" + url + "' >> " + DIR + "/subs.list");
+  toast("生成配置…");
+  await sh("sh " + DIR + "/gen.sh >/dev/null 2>&1 && sh " + DIR + "/ctl.sh restart");
+  setTimeout(()=>{refresh().then(render);}, 1500);
+}
+
+async function delSub(i){
+  const raw = await sh("cat " + DIR + "/subs.list");
+  const rows = raw.split("\n").filter(Boolean).filter((_,k)=>k!==i);
+  await writeFile(DIR + "/subs.list", rows.join("\n") + (rows.length?"\n":""));
+  await sh("sh " + DIR + "/gen.sh >/dev/null 2>&1 && sh " + DIR + "/ctl.sh restart");
+  toast("已删除"); setTimeout(()=>{refresh().then(render);}, 1200);
+}
+
+async function updateSubs(){
+  const raw = await sh("cat " + DIR + "/subs.list");
+  const rows = raw.split("\n").filter(Boolean).map(l=>l.split("|"));
+  toast("更新中…");
+  for (let i=0;i<rows.length;i++){
+    const url = rows[i][1]; if(!url) continue;
+    await sh("curl -L --max-time 40 -o " + DIR + "/data/sub" + i + ".yaml '" + url + "'");
+  }
+  await sh("sh " + DIR + "/gen.sh >/dev/null 2>&1 && sh " + DIR + "/ctl.sh restart");
+  toast("已更新"); setTimeout(()=>{refresh().then(render);}, 1200);
+}
+
+async function renderLogs(v){
+  const log = await sh("tail -n 80 " + DIR + "/logs/core.log 2>/dev/null");
+  v.innerHTML = '<div class="card scroll"><pre id="logbox">' + escapeHtml(log || "暂无日志") + '</pre></div>' +
+    '<div class="card"><div class="row" style="justify-content:space-between">' +
+    '<button class="btn ghost" onclick="renderLogs(document.getElementById(\'view\'))">刷新</button>' +
+    '<button class="btn ghost" onclick="sh(\'rm -f ' + DIR + '/logs/core.log\'); toast(\'已清空\')">清空</button></div></div>';
+}
+
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- traffic polling ----------
+let lastT = 0, lastUp = 0, lastDown = 0;
+async function pollTraffic(){
+  if(!state.running) return;
+  const c = await api("/connections");
+  if(!c) return;
+  const up = Number(c.uploadTotal||0), down = Number(c.downloadTotal||0);
+  const now = Date.now();
+  if(lastT){
+    const dt = Math.max((now-lastT)/1000, .5);
+    document.getElementById("up").textContent = fmtBytes(Math.max(0,(up-lastUp)/dt)) + "/s";
+    document.getElementById("down").textContent = fmtBytes(Math.max(0,(down-lastDown)/dt)) + "/s";
+  }
+  document.getElementById("upTotal").textContent = "累计 " + fmtBytes(up);
+  document.getElementById("downTotal").textContent = "累计 " + fmtBytes(down);
+  lastT = now; lastUp = up; lastDown = down;
+}
+
+function boot(){
+  document.getElementById("view").innerHTML = '<div class="card"><div class="empty">正在读取内核状态…</div></div>';
+  refresh().then(render);
+  setInterval(()=>{ refresh().then(()=>{ if(state.tab!=="logs") render(); }); }, 5000);
+  setInterval(pollTraffic, 2000);
+}
+boot();
+</script>
+</body>
+</html>
