@@ -279,6 +279,7 @@ private fun TabItem(
     Column(
         modifier
             .fillMaxHeight()
+            .padding(top = 3.dp)
             .clickable(interactionSource = interaction, indication = null) { onSelect() },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -293,11 +294,12 @@ private fun TabItem(
                     scaleY = scale
                 }
         )
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(1.dp))
         Text(
             label,
             color = if (selected) Palette.primary else Palette.textFaint,
             fontSize = 10.5.sp,
+            lineHeight = 12.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             modifier = Modifier.graphicsLayer { alpha = labelAlpha }
         )
