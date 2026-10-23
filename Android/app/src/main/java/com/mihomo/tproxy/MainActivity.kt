@@ -43,6 +43,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
@@ -215,7 +216,7 @@ fun BottomBar(tab: Int, onSelect: (Int) -> Unit) {
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .height(62.dp)
+                .height(60.dp)
                 .shadow(
                     elevation = 18.dp,
                     shape = RoundedCornerShape(26.dp),
@@ -235,13 +236,14 @@ fun BottomBar(tab: Int, onSelect: (Int) -> Unit) {
             )
             Box(
                 Modifier
+                    .align(Alignment.CenterStart)
                     .offset(x = x)
                     .width(slot)
-                    .fillMaxHeight()
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .height(46.dp)
+                    .padding(horizontal = 10.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Palette.pillBg)
-                    .border(1.dp, Palette.primary.copy(alpha = 0.26f), RoundedCornerShape(20.dp))
+                    .border(1.dp, Palette.primary.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
             )
             Row(Modifier.fillMaxSize()) {
                 TabItem(0, tab, "首页", Icons.Rounded.Home, Modifier.weight(1f)) { onSelect(0) }
@@ -273,8 +275,11 @@ private fun TabItem(
         animationSpec = tween(180),
         label = "tabAlpha"
     )
+    val interaction = remember { MutableInteractionSource() }
     Column(
-        modifier.clickable { onSelect() },
+        modifier
+            .fillMaxHeight()
+            .clickable(interactionSource = interaction, indication = null) { onSelect() },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
