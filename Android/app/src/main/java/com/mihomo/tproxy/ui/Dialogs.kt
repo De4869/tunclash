@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -265,6 +267,33 @@ fun MergeFilterDialog(current: String, onDismiss: () -> Unit, onApply: (String) 
         text = {
             Column {
                 Text("整合时排除名字里包含这些关键词的节点，多个关键词用逗号分隔", color = Palette.textFaint, fontSize = 11.sp)
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        "流量/套餐" to "剩余流量,套餐,到期,过期,重置",
+                        "官网/客服" to "官网,客服,订阅,网址",
+                        "试用/倍率" to "试用,0.1,0.2,0.5,倍率",
+                        "公告/通知" to "公告,通知,更新时间,群组"
+                    ).forEach { (label, words) ->
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Palette.primary.copy(alpha = 0.12f))
+                                .clickableNoRipple {
+                                    val have = text.split(",", "，").map { it.trim() }.filter { it.isNotBlank() }
+                                    val add = words.split(",").map { it.trim() }
+                                        .filter { it.isNotBlank() && !have.contains(it) }
+                                    text = (have + add).joinToString(",")
+                                }
+                                .padding(horizontal = 9.dp, vertical = 6.dp)
+                        ) {
+                            Text(label, color = Palette.primary, fontSize = 10.5.sp)
+                        }
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = text,
