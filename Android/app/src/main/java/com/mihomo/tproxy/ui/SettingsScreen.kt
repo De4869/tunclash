@@ -104,7 +104,17 @@ fun SettingsScreen(
                 }
                 if (s.adBlock) {
                     Divider()
-                    SettingRow("在线规则源", if (s.adSources.isEmpty()) "未添加（仅用内置规则）" else s.adSources.size.toString() + " 个规则源", onClick = { dialog = "ads" })
+                    val total = s.adSources.filter { it.count > 0 }.sumOf { it.count }
+                    val last = s.adSources.maxOfOrNull { it.updatedAt } ?: 0L
+                    SettingRow(
+                        "在线规则源",
+                        if (s.adSources.isEmpty()) "未添加（仅用内置规则）"
+                        else s.adSources.size.toString() + " 个源 · " + total + " 条规则"
+                    ) { dialog = "ads" }
+                    Divider()
+                    SettingRow("立即更新规则", "上次更新 " + fmtTime(last), onClick = { vm.updateAdRules() })
+                    Divider()
+                    SettingRow("规则自动更新", "每 " + s.adUpdateHours + " 小时", onClick = { dialog = "adint" })
                 }
                 Divider()
                 SettingRow("DNS", dnsLabel(s.dnsPreset), onClick = { dialog = "dns" })
@@ -155,7 +165,7 @@ fun SettingsScreen(
         SectionLabel("关于")
         GlassCard(Modifier.fillMaxWidth()) {
             Column {
-                SettingRow("Mihomo 透明代理", "v1.0.0", onClick = {})
+                SettingRow("TunClash", "v" + com.mihomo.tproxy.BuildConfig.VERSION_NAME, onClick = {})
                 Divider()
                 SettingRow("内核版本", state.version.ifBlank { "—" }, onClick = {})
                 Divider()
@@ -177,6 +187,15 @@ fun SettingsScreen(
                 "direct" to "全局直连"
             ), s.rulePreset, { dialog = null }
         ) { vm.applySettings(s.copy(rulePreset = it)) }
+
+        "adint" -> ChoiceDialog(
+            "规则自动更新", listOf(
+                "6" to "每 6 小时",
+                "12" to "每 12 小时",
+                "24" to "每天（默认）",
+                "48" to "每 2 天"
+            ), s.adUpdateHours.toString(), { dialog = null }
+        ) { vm.applySettings(s.copy(adUpdateHours = it.toIntOrNull() ?: 24)) }
 
         "dns" -> ChoiceDialog(
             "DNS", listOf(
@@ -205,6 +224,10 @@ fun SettingsScreen(
         ) { vm.applySettings(s.copy(logLevel = it)) }
     }
 }
+
+private fun fmtTime(ts: Long): String =
+    if (ts <= 0L) "未更新"
+    else java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(ts))
 
 @Composable
 private fun ThemeChip(label: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {

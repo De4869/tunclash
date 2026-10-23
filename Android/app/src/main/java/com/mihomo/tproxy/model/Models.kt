@@ -21,7 +21,9 @@ data class RuleSource(
     val name: String,
     val url: String,
     val behavior: String = "domain",
-    val format: String = "yaml"
+    val format: String = "yaml",
+    val count: Int = -1,          // -1 = 未知（如 mrs 二进制）
+    val updatedAt: Long = 0L      // 上次成功拉取的时间
 )
 
 data class ProxySettings(
@@ -40,6 +42,7 @@ data class ProxySettings(
     val perAppUids: Set<Int> = emptySet(),
     val adBlock: Boolean = false,
     val adSources: List<RuleSource> = emptyList(),
+    val adUpdateHours: Int = 24,   // 在线规则自动更新间隔（小时）
     val bootStart: Boolean = false,
     val secret: String = "mihomo-tproxy"
 )

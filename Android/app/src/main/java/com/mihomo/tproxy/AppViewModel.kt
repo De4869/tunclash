@@ -429,6 +429,44 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Manually refresh every online ad-rule source, and remember how many entries each one has. */
+    fun updateAdRules() {
+        val s0 = store.settings
+        if (s0.adSources.isEmpty()) { toast("还没有在线规则源"); return }
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.update { it.copy(busy = true) }
+            try {
+                var ok = 0
+                val list = s0.adSources.map { src ->
+                    val text = runCatching { SubFetcher.fetch(src.url, 25000).content }.getOrNull()
+                    if (text == null) src else {
+                        ok++
+                        src.copy(count = countRuleEntries(text, src.format), updatedAt = System.currentTimeMillis())
+                    }
+                }
+                val ns = s0.copy(adSources = list)
+                store.settings = ns
+                _state.update { it.copy(settings = ns) }
+                if (core.status()) applySettings(ns)
+                val total = list.filter { it.count > 0 }.sumOf { it.count }
+                toast("规则已更新 " + ok + "/" + list.size + " 个源 · 共 " + total + " 条")
+            } finally {
+                _state.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    private fun countRuleEntries(text: String, format: String): Int {
+        if (format.equals("mrs", true)) return -1
+        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
+        val p = lines.indexOfFirst { it.startsWith("payload:") }
+        val body = if (p >= 0) lines.drop(p + 1) else lines
+        return when (format.lowercase()) {
+            "yaml" -> body.count { it.startsWith("-") }        // payload 列表
+            else -> body.count { !it.startsWith("#") }          // classical 文本：一行一条
+        }
+    }
+
     /** Theme only affects the UI, no config reload needed. */
     fun setTheme(mode: String) {
         val s = store.settings.copy(themeMode = mode)

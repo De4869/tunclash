@@ -199,6 +199,14 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
                     }
                 }
                 Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Text(
+                        "全部更新",
+                        color = Palette.primary,
+                        fontSize = 11.sp,
+                        modifier = Modifier.clickableNoRipple { vm.updateAdRules() }.padding(6.dp)
+                    )
+                }
                 if (settings.adSources.isEmpty()) {
                     Text("还没有添加规则源", color = Palette.textFaint, fontSize = 11.sp)
                 } else {
@@ -210,6 +218,14 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
                             Column(Modifier.weight(1f)) {
                                 Text(s.name, color = Palette.text, fontSize = 12.sp)
                                 Text(s.url, color = Palette.textFaint, fontSize = 9.5.sp, maxLines = 1)
+                                Text(
+                                    (if (s.count >= 0) s.count.toString() + " 条" else "规则数未知") +
+                                        " · " + (if (s.updatedAt <= 0) "未更新" else
+                                        java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault())
+                                            .format(java.util.Date(s.updatedAt))),
+                                    color = Palette.textFaint,
+                                    fontSize = 9.5.sp
+                                )
                             }
                             Text(
                                 "删除",

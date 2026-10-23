@@ -168,7 +168,7 @@ object ConfigComposer {
             b.append("    format: ").append(src.format).append("\n")
             b.append("    url: ").append(Yaml.quote(src.url)).append("\n")
             b.append("    path: ./ad").append(i).append(".yaml\n")
-            b.append("    interval: 86400\n")
+            b.append("    interval: ").append(s.adUpdateHours.coerceIn(1, 168) * 3600).append("\n")
         }
         return b.toString()
     }

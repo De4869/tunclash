@@ -31,6 +31,7 @@ class Store(ctx: Context) {
                     (0 until a.length()).map { a.optString(it) }.toSet()
                 } ?: emptySet(),
                 adBlock = j.optBoolean("adBlock", false),
+                adUpdateHours = j.optInt("adUpdateHours", 24),
                 adSources = j.optJSONArray("adSources")?.let { a ->
                     (0 until a.length()).mapNotNull { i ->
                         val o = a.optJSONObject(i) ?: return@mapNotNull null
@@ -38,7 +39,9 @@ class Store(ctx: Context) {
                             o.optString("name"),
                             o.optString("url"),
                             o.optString("behavior", "domain"),
-                            o.optString("format", "yaml")
+                            o.optString("format", "yaml"),
+                            o.optInt("count", -1),
+                            o.optLong("updatedAt", 0L)
                         )
                     }
                 } ?: emptyList(),
@@ -61,11 +64,13 @@ class Store(ctx: Context) {
             j.put("perAppWhitelist", v.perAppWhitelist)
             j.put("perAppPackages", JSONArray(v.perAppPackages.toList()))
             j.put("adBlock", v.adBlock)
+            j.put("adUpdateHours", v.adUpdateHours)
             j.put("adSources", org.json.JSONArray().apply {
                 v.adSources.forEach { s ->
                     put(org.json.JSONObject().apply {
                         put("name", s.name); put("url", s.url)
                         put("behavior", s.behavior); put("format", s.format)
+                        put("count", s.count); put("updatedAt", s.updatedAt)
                     })
                 }
             })
