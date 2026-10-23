@@ -85,19 +85,14 @@ fun GlassCard(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = if (highlight) 0.10f else 0.06f),
-                        Color.White.copy(alpha = if (highlight) 0.05f else 0.025f)
+                        if (highlight) Palette.cardTop else Palette.card,
+                        Palette.cardBottom
                     )
                 )
             )
             .border(
                 width = 1.dp,
-                brush = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = if (highlight) 0.22f else 0.12f),
-                        Color.White.copy(alpha = 0.04f)
-                    )
-                ),
+                color = Palette.cardBorder,
                 shape = RoundedCornerShape(corner.dp)
             )
             .padding(16.dp)
@@ -120,7 +115,7 @@ fun Pill(
     ) {
         Text(
             text,
-            color = if (filled) Color(0xFF05070D) else color,
+            color = if (filled) Palette.bg1 else color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -162,11 +157,11 @@ fun PowerOrb(
         animationSpec = tween(600)
     )
     val coreTop by animateColorAsState(
-        if (on) Palette.primary else Color(0xFF232A3A),
+        if (on) Palette.primary else Palette.orbOffTop,
         animationSpec = tween(600)
     )
     val coreBottom by animateColorAsState(
-        if (on) Color(0xFF2A4BD8) else Color(0xFF161B28),
+        if (on) Color(0xFF2A4BD8) else Palette.orbOffBottom,
         animationSpec = tween(600)
     )
 

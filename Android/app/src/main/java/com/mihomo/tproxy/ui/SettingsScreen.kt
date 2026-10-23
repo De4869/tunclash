@@ -54,6 +54,16 @@ fun SettingsScreen(
         Text("分流 · DNS · 内核 · 自启", color = Palette.textFaint, fontSize = 11.5.sp)
 
         Spacer(Modifier.height(16.dp))
+        SectionLabel("外观")
+        GlassCard(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ThemeChip("跟随系统", s.themeMode == "system", Modifier.weight(1f)) { vm.setTheme("system") }
+                ThemeChip("深色", s.themeMode == "dark", Modifier.weight(1f)) { vm.setTheme("dark") }
+                ThemeChip("浅色", s.themeMode == "light", Modifier.weight(1f)) { vm.setTheme("light") }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
         SectionLabel("代理")
         GlassCard(Modifier.fillMaxWidth()) {
             Column {
@@ -197,8 +207,27 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun ThemeChip(label: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (on) Palette.primary.copy(alpha = 0.18f) else Palette.card)
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            color = if (on) Palette.primary else Palette.textDim,
+            fontSize = 12.5.sp,
+            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
 fun Divider() {
-    Box(Modifier.fillMaxWidth().height(1.dp).padding(vertical = 0.dp).background(Color.White.copy(alpha = 0.05f)))
+    Box(Modifier.fillMaxWidth().height(1.dp).padding(vertical = 0.dp).background(Palette.cardBorder))
 }
 
 @Composable
@@ -235,7 +264,7 @@ fun switchColors() = SwitchDefaults.colors(
     checkedThumbColor = Color.White,
     checkedTrackColor = Palette.primary,
     uncheckedThumbColor = Palette.textFaint,
-    uncheckedTrackColor = Color(0xFF232A3A),
+    uncheckedTrackColor = Palette.track,
     uncheckedBorderColor = Color.Transparent
 )
 

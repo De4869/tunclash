@@ -38,6 +38,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,6 +96,24 @@ fun AppRoot(vm: AppViewModel, initialScreen: String = "") {
     var showAdd by remember { mutableStateOf(false) }
     var firstRunHandled by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+
+    // theme: follow system by default, switchable in settings
+    val systemDark = isSystemInDarkTheme()
+    val dark = when (state.settings.themeMode) {
+        "dark" -> true
+        "light" -> false
+        else -> systemDark
+    }
+    if (Palette.dark != dark) Palette.apply(dark)
+    val activity = LocalContext.current as? ComponentActivity
+    LaunchedEffect(dark) {
+        activity?.enableEdgeToEdge(
+            statusBarStyle = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        )
+    }
 
     LaunchedEffect(initialScreen) {
         when (initialScreen) {
@@ -163,8 +184,8 @@ fun AppRoot(vm: AppViewModel, initialScreen: String = "") {
                 Modifier
                     .padding(horizontal = 24.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF1A2136))
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(14.dp))
+                    .background(Palette.sheet)
+                    .border(1.dp, Palette.cardBorder, RoundedCornerShape(14.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) { Text(data.visuals.message, color = Palette.text, fontSize = 12.5.sp) }
         }
@@ -180,8 +201,8 @@ fun BottomBar(tab: Int, onSelect: (Int) -> Unit) {
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 18.dp, vertical = 10.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xD90B1020))
-            .border(1.dp, Color.White.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+            .background(Palette.navBg)
+            .border(1.dp, Palette.cardBorder, RoundedCornerShape(24.dp))
             .padding(horizontal = 8.dp, vertical = 7.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

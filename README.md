@@ -144,44 +144,14 @@ cd Android && ./gradlew assembleDebug
 **Q：怎么彻底卸载？**
 App 内「设置 → 停止内核」，然后 `adb shell su -c "rm -rf /data/adb/mihomo_tproxy /data/adb/service.d/99-mihomo-tproxy.sh"`，再卸载 App。
 
-## 8. 真机验证
-
-见 [docs/测试记录.md](docs/测试记录.md)。核心链路（TUN 接管 / DNS 劫持 / 热重载 / 模式切换 / 配置校验 / 平台检测）均已在小米 15（Android 17 + SukiSU）上跑通，截图在 `docs/img/`。
-
-## 9. 已知限制
+## 8. 已知限制
 
 - 仅打包 **arm64-v8a** 内核（目前所有主流机型都是 arm64）。
 - IPv6 默认关闭（避免节点不支持 IPv6 时泄漏）；需要时在设置里打开。
 - UDP（QUIC）能否走代理取决于节点是否支持 UDP；不支持时游戏/视频通话会退回 TCP。
 - 需要 Root；未 Root 的设备请用 ClashMetaForAndroid 这类 VpnService 方案。
 
-## 10. 排障笔记（真机踩过的坑）
-
-1. **域名被污染导致 `GEOIP,CN,DIRECT` 误判**
-   国内 DNS 对 Google/YouTube 会返回假 IP（甚至是 Facebook 的 IP），iOS/Android 都一样。
-   解决：开启 `sniffer.override-destination`（用 TLS SNI / HTTP Host 还原域名），并在规则最前面放
-   `GEOSITE,geolocation-!cn,<主策略组>`，让域名规则优先于 `GEOIP`。
-2. **不要用 iptables 劫持 53 端口**
-   为了拿 fake-ip 我曾把 DNS 重定向到 mihomo:1053，结果 mihomo 自己去解析机场域名时也被重定向回自己，
-   变成死循环（日志：`x-mg.xueshan168.cc:443 connect error: dns resolve failed`），**所有节点都连不上**。
-   最终方案：不做 DNS 劫持，靠 sniffer 还原域名；DNS 只负责解析机场域名。
-3. **国外 DNS 不可达时要有兜底**
-   设置里选 Google/Cloudflare DNS 在国内直连时不可用，现在不论选哪个，都会额外追加
-   `https://dns.alidns.com/dns-query` + `223.5.5.5` 作为兜底，避免解析全挂。
-4. **分应用白名单不能覆盖规则**
-   早期实现是"白名单时把规则替换成 PROCESS-NAME + MATCH,DIRECT"，等于关掉所有分流。
-   现在改成 TUN 的 `include-uid` / `exclude-uid`（App 用 PackageManager 把包名换算成 UID），规则完全不改。
-5. **YAML 缩进**
-   往订阅的 `rules:` 里插规则时必须沿用原有缩进（很多机场是 4 空格），否则后续规则会被解析成子列表，
-   内核报 `rules[2] ...` 校验失败。现在会自动探测缩进。
-6. **切换订阅后界面没变化**
-   切换订阅会重新合成 → `mihomo -t` 校验 → 写入 → `PUT /configs` 热重载。任何一步失败都会导致"还在跑旧配置"，
-   看起来就像没切换。现在：校验失败直接提示且保留旧配置；热重载被拒会自动 stop/start 兜底；切换完成后 toast
-   里带上新配置的节点数，并立刻刷新节点列表。
-7. **引用带引号的 MATCH**
-   `- 'MATCH,机场主组'` 这种写法要让"主策略组"解析支持引号，否则注入的 GEOSITE 规则找不到目标组。
-
-## 11. 不装 App 也能用：模块 + WebUI
+## 9. 不装 App 也能用：模块 + WebUI
 
 模块自带 WebUI（KernelSU 管理器「模块」页里，Mihomo TProxy 卡片上的 `<>` 打开），和 App 共用同一套运行时
 （`/data/adb/mihomo_tproxy`），装 App 或不装都能用，两边操作互相同步状态。

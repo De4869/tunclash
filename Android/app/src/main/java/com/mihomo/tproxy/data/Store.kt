@@ -16,6 +16,7 @@ class Store(ctx: Context) {
         get() {
             val j = runCatching { JSONObject(sp.getString("settings", "{}")!!) }.getOrNull() ?: JSONObject()
             return ProxySettings(
+                themeMode = j.optString("themeMode", "system"),
                 mode = j.optString("mode", "rule"),
                 rulePreset = j.optString("rulePreset", "smart"),
                 dnsPreset = j.optString("dnsPreset", "cn"),
@@ -47,6 +48,7 @@ class Store(ctx: Context) {
         }
         set(v) {
             val j = JSONObject()
+            j.put("themeMode", v.themeMode)
             j.put("mode", v.mode)
             j.put("rulePreset", v.rulePreset)
             j.put("dnsPreset", v.dnsPreset)

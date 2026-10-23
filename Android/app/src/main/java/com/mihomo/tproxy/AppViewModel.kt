@@ -429,6 +429,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Theme only affects the UI, no config reload needed. */
+    fun setTheme(mode: String) {
+        val s = store.settings.copy(themeMode = mode)
+        store.settings = s
+        _state.update { it.copy(settings = s) }
+    }
+
     fun applySettings(s: ProxySettings) {
         viewModelScope.launch(Dispatchers.IO) {
             store.settings = s

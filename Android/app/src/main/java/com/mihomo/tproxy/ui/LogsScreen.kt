@@ -76,7 +76,7 @@ fun LogsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFF06080F))) {
+    Column(Modifier.fillMaxSize().background(Palette.bg0)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically

@@ -25,6 +25,7 @@ data class RuleSource(
 )
 
 data class ProxySettings(
+    val themeMode: String = "system",   // system | dark | light
     val mode: String = "rule",              // rule | global | direct
     val rulePreset: String = "smart",       // smart | global | direct
     val dnsPreset: String = "cn",           // cn | google | cf | custom
