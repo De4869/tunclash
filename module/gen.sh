@@ -25,7 +25,11 @@ if [ -f "$LIST" ]; then
     [ -z "$name" ] && continue
     f="sub${i}.yaml"
     if [ -f "$DATA/$f" ] && grep -q "proxies:" "$DATA/$f"; then
-      USED="$USED sub$i"
+      # a subscription is a full Clash config; a provider must contain only the proxies list
+      awk 'BEGIN{p=0} /^proxies:/{p=1; print; next} p && /^[A-Za-z0-9_-]+:/{exit} p{print}' "$DATA/$f" > "$DATA/p$i.yaml"
+      if [ "$(grep -c 'name:' "$DATA/p$i.yaml" 2>/dev/null)" -gt 0 ]; then
+        USED="$USED sub$i"
+      fi
     fi
     i=$((i+1))
   done < "$LIST"
@@ -98,7 +102,7 @@ USECSV=$(echo $USED | tr ' ' ',')
     for u in $USED; do
       echo "  $u:"
       echo "    type: file"
-      echo "    path: ./$u.yaml"
+      echo "    path: ./p${u#sub}.yaml"
       echo "    health-check:"
       echo "      enable: true"
       echo "      url: http://www.gstatic.com/generate_204"
