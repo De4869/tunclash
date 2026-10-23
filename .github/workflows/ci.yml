@@ -24,7 +24,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses > /dev/null || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" > /dev/null
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Dependencies (mihomo + geo)
         run: bash scripts/fetch-deps.sh
