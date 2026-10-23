@@ -4,4 +4,4 @@ version=v1.0.0
 versionCode=1
 author=Mihomo TProxy
 description=Root 级 mihomo 透明代理（TUN 全局接管，不占用 VPN 入口）。内置 WebUI，可脱离 App 独立使用；配合「Mihomo 透明代理」App 体验更佳。
-updateJson=https://github.com/USER/REPO/releases/latest/download/update.json
+updateJson=https://github.com/De4869/mihomo-tproxy/releases/latest/download/update.json
