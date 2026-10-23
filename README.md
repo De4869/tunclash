@@ -1,7 +1,7 @@
-# Mihomo 透明代理 · Mihomo TProxy
+# TunClash · mihomo 透明代理
 
-[![CI](https://github.com/De4869/mihomo-tproxy/actions/workflows/ci.yml/badge.svg)](https://github.com/De4869/mihomo-tproxy/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/De4869/mihomo-tproxy)](https://github.com/De4869/mihomo-tproxy/releases)
+[![CI](https://github.com/De4869/tunclash/actions/workflows/ci.yml/badge.svg)](https://github.com/De4869/tunclash/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/De4869/tunclash)](https://github.com/De4869/tunclash/releases)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
@@ -89,7 +89,7 @@ App 仍然是控制面板；两者共用同一套运行时目录。
 - **设置 → 分应用代理**：黑名单=选中的应用直连；白名单=只有选中的应用走代理。走的是 `PROCESS-NAME` 规则，改完热重载。
 - **设置 → 广告拦截**：加入 `GEOSITE,category-ads-all,REJECT` 规则。
 - **首页 → 检测**：一键测 10 个常用平台（走当前节点，超时 6 秒），结果直接显示每个平台是否可用和延迟。
-- **设置 → 开机自启**：写入 `/data/adb/service.d/99-mihomo-tproxy.sh`。
+- **设置 → 开机自启**：写入 `/data/adb/service.d/99-tunclash.sh`。
 
 ## 5. 技术方案（为什么这样能连上）
 
@@ -142,7 +142,7 @@ cd Android && ./gradlew assembleDebug
 在。内核是 root 进程，App 被杀不影响；重新打开 App 会通过 API 读到运行状态。
 
 **Q：怎么彻底卸载？**
-App 内「设置 → 停止内核」，然后 `adb shell su -c "rm -rf /data/adb/mihomo_tproxy /data/adb/service.d/99-mihomo-tproxy.sh"`，再卸载 App。
+App 内「设置 → 停止内核」，然后 `adb shell su -c "rm -rf /data/adb/mihomo_tproxy /data/adb/service.d/99-tunclash.sh"`，再卸载 App。
 
 ## 8. 已知限制
 
