@@ -202,28 +202,6 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                .background(Palette.primary.copy(alpha = 0.14f))
-                .border(1.dp, Palette.primary.copy(alpha = 0.35f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                .clickable { vm.checkAppUpdate() }
-                .padding(vertical = 13.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                when {
-                    state.appUpdateVersion.isNotBlank() -> "查看新版本 v" + state.appUpdateVersion
-                    state.appUpdateLatest.isNotBlank() -> "已是最新版本 v" + state.appUpdateLatest
-                    else -> "检查更新"
-                },
-                color = Palette.primary,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
         Spacer(Modifier.height(110.dp))
     }
 
