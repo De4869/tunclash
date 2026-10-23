@@ -122,7 +122,7 @@ fun ChoiceDialog(
                             .padding(vertical = 3.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSel) Palette.primary.copy(alpha = 0.14f) else Color.Transparent)
-                            .clickable { onSelect(value); onDismiss() }
+                            .clickableNoRipple { onSelect(value); onDismiss() }
                             .padding(horizontal = 10.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -136,7 +136,7 @@ fun ChoiceDialog(
         },
         confirmButton = {},
         dismissButton = {
-            Text("关闭", color = Palette.textDim, modifier = Modifier.clickable { onDismiss() }.padding(12.dp))
+            Text("关闭", color = Palette.textDim, modifier = Modifier.clickableNoRipple { onDismiss() }.padding(12.dp))
         }
     )
 }
@@ -164,7 +164,7 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
                             Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Palette.primary.copy(alpha = 0.14f))
-                                .clickable { url = u; behavior = b; format = "text" }
+                                .clickableNoRipple { url = u; behavior = b; format = "text" }
                                 .padding(horizontal = 8.dp, vertical = 6.dp)
                         ) { Text(label, color = Palette.primary, fontSize = 10.5.sp) }
                     }
@@ -193,7 +193,7 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
                             Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(if (sel) Palette.primary.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.05f))
-                                .clickable { behavior = v; format = if (v == "domain" || v == "ipcidr") "yaml" else "text" }
+                                .clickableNoRipple { behavior = v; format = if (v == "domain" || v == "ipcidr") "yaml" else "text" }
                                 .padding(horizontal = 8.dp, vertical = 5.dp)
                         ) { Text(label, color = if (sel) Palette.text else Palette.textDim, fontSize = 10.5.sp) }
                     }
@@ -215,7 +215,7 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
                                 "删除",
                                 color = Palette.danger,
                                 fontSize = 11.sp,
-                                modifier = Modifier.clickable { vm.removeAdSource(i) }.padding(6.dp)
+                                modifier = Modifier.clickableNoRipple { vm.removeAdSource(i) }.padding(6.dp)
                             )
                         }
                     }
@@ -234,7 +234,7 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
             )
         },
         dismissButton = {
-            Text("关闭", color = Palette.textDim, modifier = Modifier.clickable { onDismiss() }.padding(10.dp))
+            Text("关闭", color = Palette.textDim, modifier = Modifier.clickableNoRipple { onDismiss() }.padding(10.dp))
         }
     )
 }

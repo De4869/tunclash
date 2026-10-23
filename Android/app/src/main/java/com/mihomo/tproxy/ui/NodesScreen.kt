@@ -99,7 +99,7 @@ fun NodesScreen(state: UiState, vm: AppViewModel) {
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (selected) Palette.primary.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.04f))
                             .border(1.dp, if (selected) Palette.primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.07f), RoundedCornerShape(12.dp))
-                            .clickable { groupIndex = idx }
+                            .clickableNoRipple { groupIndex = idx }
                             .padding(horizontal = 12.dp, vertical = 7.dp)
                     ) {
                         Text(
@@ -187,7 +187,7 @@ fun NodeRow(name: String, info: NodeInfo?, selected: Boolean, onClick: () -> Uni
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) Palette.primary.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.028f))
             .border(1.dp, if (selected) Palette.primary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .clickableNoRipple { onClick() }
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -235,7 +235,7 @@ private fun SmallChip(label: String, on: Boolean, onClick: () -> Unit) {
                 if (on) Palette.primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.07f),
                 RoundedCornerShape(11.dp)
             )
-            .clickable { onClick() }
+            .clickableNoRipple { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(label, color = if (on) Palette.text else Palette.textDim, fontSize = 11.5.sp)

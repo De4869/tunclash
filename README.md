@@ -20,7 +20,7 @@
 
 | 能力 | 说明 |
 |---|---|
-| **mihomo 内核** | arm64 内核随构建拉取最新 release（默认 v1.19.32），支持 vmess / vless / trojan / ss / hysteria2 / tuic 等全部主流协议，可在 App 内一键更新 |
+| **mihomo 内核** | arm64 内核随构建拉取最新 release（当前 v1.19.x 最新），支持 vmess / vless / trojan / ss / hysteria2 / tuic 等全部主流协议，可在 App 内一键更新 |
 | **无 VPN 槽位** | 直接用 `/dev/net/tun` + 策略路由接管全局流量，不创建 VpnService，不显示 VPN 图标 |
 | **订阅导入** | 支持 Clash 订阅链接（自动识别 YAML / base64 分享链接）、多行粘贴节点链接、本地 YAML |
 | **节点整合** | 多个订阅一键合并，按 `类型+服务器+端口+凭据` 去重，重名自动改名，自动按地区分组（港/台/日/新/美…） |
@@ -180,7 +180,7 @@ WebUI 的独立运行时靠这几个文件：
 1. WebUI 走 `gen.sh` 生成 **provider 结构**的配置（proxy-providers + 分组 + GEOSITE 规则），适合纯模块用户；
    如果用 App 切换订阅，App 会用自己的配置覆盖 `config.yaml`，两者择一即可。
 2. WebUI 订阅只接受 **Clash YAML** 订阅（分享链接的转换在 App 里做）。
-3. 模块安装不会覆盖你已经升级过的内核版本（只有全新安装才释放随包内核，当前 v1.19.32）。
+3. 模块安装不会覆盖你已经升级过的内核版本（只有全新安装才释放随包内核）。
 4. 升级内核的三种方式：
    - App：设置 → 检查更新 → 立即更新；
    - WebUI：概览 → 更新内核（调用 `update_core.sh`）；

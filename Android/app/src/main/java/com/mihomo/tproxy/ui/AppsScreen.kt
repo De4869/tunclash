@@ -76,7 +76,7 @@ fun AppsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickable {
+                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickableNoRipple {
                     vm.applySettings(state.settings.copy(perAppPackages = selected))
                     onBack()
                 },
@@ -95,7 +95,7 @@ fun AppsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
                 color = Palette.primary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable {
+                modifier = Modifier.clickableNoRipple {
                     vm.applySettings(state.settings.copy(perAppPackages = selected))
                     onBack()
                 }.padding(8.dp)
@@ -139,7 +139,7 @@ fun AppsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
                             .clip(RoundedCornerShape(14.dp))
                             .background(if (checked) Palette.primary.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.025f))
                             .border(1.dp, if (checked) Palette.primary.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.04f), RoundedCornerShape(14.dp))
-                            .clickable {
+                            .clickableNoRipple {
                                 selected = if (checked) selected - app.pkg else selected + app.pkg
                             }
                             .padding(horizontal = 12.dp, vertical = 10.dp),

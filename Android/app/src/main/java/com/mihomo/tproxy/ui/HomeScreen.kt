@@ -88,7 +88,7 @@ fun HomeScreen(
                     .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.05f))
-                    .clickable { onOpenSettings() },
+                    .clickableNoRipple { onOpenSettings() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Rounded.Settings, null, tint = Palette.textDim, modifier = Modifier.size(18.dp))
@@ -138,7 +138,7 @@ fun HomeScreen(
                         Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(Palette.primary)
-                            .clickable { vm.retryRoot() }
+                            .clickableNoRipple { vm.retryRoot() }
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) { Text("重新授权", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 }
@@ -190,7 +190,7 @@ fun HomeScreen(
         }
         val curNode = state.nodes.firstOrNull { it.name == current }
         val profileName = state.activeProfile?.name ?: "未选择配置"
-        GlassCard(Modifier.fillMaxWidth().clickable { onOpenNodes() }) {
+        GlassCard(Modifier.fillMaxWidth().clickableNoRipple { onOpenNodes() }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("当前节点", color = Palette.textFaint, fontSize = 10.5.sp)
@@ -282,7 +282,7 @@ fun ModeChip(label: String, selected: Boolean, modifier: Modifier = Modifier, on
                 if (selected) Palette.primary.copy(alpha = 0.45f) else Palette.cardBorder,
                 RoundedCornerShape(14.dp)
             )
-            .clickable { onClick() }
+            .clickableNoRipple { onClick() }
             .padding(vertical = 11.dp),
         contentAlignment = Alignment.Center
     ) {

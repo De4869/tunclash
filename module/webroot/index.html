@@ -10,6 +10,16 @@
     --text:#e9edf7; --dim:#8a93a8; --faint:#5a6377;
     --blue:#5b8cff; --cyan:#22d3ee; --ok:#34d399; --warn:#fbbf24; --bad:#fb7185;
   }
+  html[data-theme="light"]{
+    --bg:#f3f5fa; --card:rgba(255,255,255,.94); --line:rgba(16,24,40,.10);
+    --text:#101828; --dim:#5b6577; --faint:#8c95a6;
+  }
+  html[data-theme="light"] body{
+    background:
+      radial-gradient(900px 400px at 10% -5%, rgba(91,140,255,.16), transparent 60%),
+      radial-gradient(700px 380px at 100% 35%, rgba(34,211,238,.10), transparent 60%),
+      linear-gradient(180deg,#f7f9fd,#eef2f9 55%,#f7f9fd);
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,"Noto Sans SC","PingFang SC",system-ui,sans-serif}
@@ -80,6 +90,7 @@
       <h1>TUNCLASH</h1>
       <p>透明代理 · TPROXY · WebUI</p>
     </div>
+    <button id="themeBtn" class="btn ghost" style="padding:7px 10px;margin-right:8px" onclick="toggleTheme()">☾</button>
     <span id="pill" class="pill" style="color:var(--faint);border-color:rgba(255,255,255,.12)">
       <i class="dot"></i><span id="pillText">检测中</span>
     </span>
@@ -121,6 +132,16 @@ const API = "http://127.0.0.1:9090";
 const KSU = window.ksu || window.kernelsu || null;
 let secret = "";
 let state = { running:false, mode:"rule", groups:[], nodes:{}, current:"", tab:"home", upTotal:0, downTotal:0 };
+
+function applyTheme(t){
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('mihomo-theme', t);
+  const b = document.getElementById('themeBtn');
+  if (b) b.textContent = t === 'light' ? '☀' : '☾';
+}
+function toggleTheme(){
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+}
 
 function toast(msg){
   const t = document.getElementById("toast");
@@ -274,15 +295,28 @@ function renderNodes(v){
   v.innerHTML = `<div class="gchips">${groups.map(g=>
       `<div class="gchip ${(window.__group||groups[0].name)===g.name?"on":""}" onclick="pickGroup('${encodeURIComponent(g.name)}')">${escapeHtml(g.name)}</div>`).join("")}
     </div>
+    <input id="nodeSearch" placeholder="搜索节点 / 地区" value="${escapeHtml(state.search||"")}" oninput="state.search=this.value;render()" style="margin-top:10px">
     <div class="row" style="margin-top:8px;justify-content:space-between">
-      <div style="font-size:10.5px;color:var(--faint)">点击节点即可切换</div>
+      <div class="row" style="gap:8px">
+        <div class="gchip ${state.sortDelay?"on":""}" onclick="state.sortDelay=!state.sortDelay;render()">按延迟排序</div>
+        <div style="font-size:10.5px;color:var(--faint);align-self:center">点击节点切换</div>
+      </div>
       <button class="btn ghost" onclick="speedTest()">测速本组</button>
     </div>
     <div class="list scroll" id="nodeList"></div>`;
   const g = groups.find(x=>x.name === (window.__group || (groups[0]&&groups[0].name))) || groups[0];
   const list = document.getElementById("nodeList");
   if (!g){ list.innerHTML = '<div class="empty">没有可用策略组</div>'; return; }
-  const names = (g.all||[]).filter(n=>state.nodes[n]);
+  const q = (state.search||"").trim().toLowerCase();
+  let names = (g.all||[]).filter(n=>state.nodes[n])
+    .filter(n=>!q || n.toLowerCase().includes(q));
+  if (state.sortDelay){
+    names = names.slice().sort((a,b)=>{
+      const da = (state.nodes[a]?.history?.slice(-1)[0]?.delay)||0;
+      const db = (state.nodes[b]?.history?.slice(-1)[0]?.delay)||0;
+      return (da<=0?1e9:da) - (db<=0?1e9:db);
+    });
+  }
   if (!names.length){ list.innerHTML = '<div class="empty">该组暂无节点</div>'; return; }
   list.innerHTML = names.map(n=>{
     const p = state.nodes[n] || {};
@@ -399,7 +433,17 @@ async function updateSubs(){
   toast("已更新"); setTimeout(()=>{refresh().then(render);}, 1200);
 }
 
+let logTimer = null;
 async function renderLogs(v){
+  clearInterval(logTimer);
+  logTimer = setInterval(async ()=>{
+    if (state.tab !== "logs") { clearInterval(logTimer); return; }
+    const box = document.getElementById("logbox");
+    if (!box) return;
+    const t = await sh("tail -n 80 " + DIR + "/logs/core.log 2>/dev/null");
+    box.textContent = t || "暂无日志";
+    box.scrollTop = box.scrollHeight;
+  }, 3000);
   const log = await sh("tail -n 80 " + DIR + "/logs/core.log 2>/dev/null");
   v.innerHTML = '<div class="card scroll"><pre id="logbox">' + escapeHtml(log || "暂无日志") + '</pre></div>' +
     '<div class="card"><div class="row" style="justify-content:space-between">' +
@@ -430,6 +474,7 @@ async function pollTraffic(){
 }
 
 function boot(){
+  applyTheme(localStorage.getItem('mihomo-theme') || 'dark');
   document.getElementById("view").innerHTML = '<div class="card"><div class="empty">正在读取内核状态…</div></div>';
   refresh().then(render);
   setInterval(()=>{ refresh().then(()=>{ if(state.tab!=="logs") render(); }); }, 5000);

@@ -43,6 +43,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -125,6 +126,16 @@ fun AppRoot(vm: AppViewModel, initialScreen: String = "") {
             navigationBarStyle = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         )
+    }
+
+    // system back: close overlays first, then go back to the home tab instead of quitting
+    BackHandler(enabled = showLogs || showApps || showTest || tab != 0) {
+        when {
+            showLogs -> showLogs = false
+            showApps -> showApps = false
+            showTest -> showTest = false
+            tab != 0 -> tab = 0
+        }
     }
 
     LaunchedEffect(initialScreen) {

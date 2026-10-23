@@ -31,7 +31,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -71,6 +74,18 @@ fun AppBackground(content: @Composable () -> Unit) {
         content()
     }
 }
+
+/** Clickable without the rectangular ripple (rows/chips inside cards). */
+fun Modifier.clickableNoRipple(enabled: Boolean = true, onClick: () -> Unit): Modifier =
+    composed {
+        val source = remember { MutableInteractionSource() }
+        this.clickable(
+            enabled = enabled,
+            interactionSource = source,
+            indication = null,
+            onClick = onClick
+        )
+    }
 
 @Composable
 fun GlassCard(

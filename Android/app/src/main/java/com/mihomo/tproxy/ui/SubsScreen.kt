@@ -89,7 +89,7 @@ fun RoundIcon(
             .size(38.dp)
             .clip(CircleShape)
             .background(if (accent) Palette.primary else Color.White.copy(alpha = 0.05f))
-            .clickable { onClick() },
+            .clickableNoRipple { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, null, tint = if (accent) Color.White else Palette.textDim, modifier = Modifier.size(18.dp))
@@ -158,7 +158,7 @@ fun ProfileCard(p: Profile, active: Boolean, state: UiState, vm: AppViewModel) {
                         Modifier
                             .clip(CircleShape)
                             .background(Palette.primary.copy(alpha = 0.16f))
-                            .clickable { vm.activate(p.id) }
+                            .clickableNoRipple { vm.activate(p.id) }
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text("启用", color = Palette.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -167,13 +167,13 @@ fun ProfileCard(p: Profile, active: Boolean, state: UiState, vm: AppViewModel) {
                 }
                 if (p.kind == "url") {
                     Box(
-                        Modifier.size(30.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickable { vm.updateProfile(p.id) },
+                        Modifier.size(30.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickableNoRipple { vm.updateProfile(p.id) },
                         contentAlignment = Alignment.Center
                     ) { Icon(Icons.Rounded.Refresh, null, tint = Palette.textDim, modifier = Modifier.size(15.dp)) }
                     Spacer(Modifier.width(6.dp))
                 }
                 Box(
-                    Modifier.size(30.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickable { confirmDelete = true },
+                    Modifier.size(30.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickableNoRipple { confirmDelete = true },
                     contentAlignment = Alignment.Center
                 ) { Icon(Icons.Rounded.Delete, null, tint = Palette.danger.copy(alpha = 0.8f), modifier = Modifier.size(15.dp)) }
             }
@@ -214,9 +214,9 @@ fun ProfileCard(p: Profile, active: Boolean, state: UiState, vm: AppViewModel) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirmDelete = false },
             confirmButton = {
-                Text("删除", color = Palette.danger, modifier = Modifier.clickable { confirmDelete = false; vm.deleteProfile(p.id) }.padding(12.dp))
+                Text("删除", color = Palette.danger, modifier = Modifier.clickableNoRipple { confirmDelete = false; vm.deleteProfile(p.id) }.padding(12.dp))
             },
-            dismissButton = { Text("取消", color = Palette.textDim, modifier = Modifier.clickable { confirmDelete = false }.padding(12.dp)) },
+            dismissButton = { Text("取消", color = Palette.textDim, modifier = Modifier.clickableNoRipple { confirmDelete = false }.padding(12.dp)) },
             title = { Text("删除配置", color = Palette.text) },
             text = { Text("确定删除「" + p.name + "」吗？", color = Palette.textDim) },
             containerColor = Palette.bg2

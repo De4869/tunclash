@@ -212,7 +212,7 @@ private fun ThemeChip(label: String, on: Boolean, modifier: Modifier = Modifier,
         modifier
             .clip(RoundedCornerShape(12.dp))
             .background(if (on) Palette.primary.copy(alpha = 0.18f) else Palette.card)
-            .clickable { onClick() }
+            .clickableNoRipple { onClick() }
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -240,7 +240,7 @@ fun SettingRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .then(if (onClick != null) Modifier.clickableNoRipple { onClick() } else Modifier)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

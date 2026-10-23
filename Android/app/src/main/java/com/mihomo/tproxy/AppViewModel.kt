@@ -651,7 +651,52 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateAll() {
-        store.profiles.filter { it.kind == "url" }.forEach { updateProfile(it.id) }
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.update { it.copy(busy = true) }
+            try {
+                var ok = 0
+                store.profiles.filter { it.kind == "url" && it.url.isNotBlank() }.forEach { p ->
+                    val r = runCatching { SubFetcher.fetch(p.url) }
+                    if (r.isSuccess) {
+                        val sub = r.getOrThrow()
+                        store.upsert(
+                            p.copy(
+                                content = sub.content,
+                                updatedAt = System.currentTimeMillis(),
+                                upload = sub.upload, download = sub.download,
+                                total = sub.total, expire = sub.expire,
+                                nodeCount = ConfigComposer.nodeCount(sub.content)
+                            )
+                        )
+                        ok++
+                    }
+                }
+                _state.update { it.copy(profiles = store.profiles) }
+                // keep the merged profile in sync, otherwise its node list/count stays stale
+                refreshMerge()
+                if (store.activeId.isNotBlank()) applySettings(store.settings)
+                toast("已更新 " + ok + " 个订阅" + (if (store.profiles.any { it.isMerge }) "，聚合已同步" else ""))
+            } finally {
+                _state.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    /** Recompute the merged profile from the current subscriptions (no activation). */
+    private fun refreshMerge() {
+        val existing = store.profiles.firstOrNull { it.isMerge } ?: return
+        val sources = store.profiles.filter { !it.isMerge && it.content.isNotBlank() }
+        if (sources.isEmpty()) return
+        val yaml = ConfigComposer.merge(sources.map { it.content }, store.settings)
+        val count = ConfigComposer.nodeCount(yaml)
+        store.upsert(
+            existing.copy(
+                name = "聚合节点 · " + sources.size + " 个订阅",
+                updatedAt = System.currentTimeMillis(),
+                nodeCount = count
+            )
+        )
+        _state.update { it.copy(profiles = store.profiles) }
     }
 
     fun activate(id: String) {
@@ -717,7 +762,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 store.upsert(p)
                 _state.update { it.copy(profiles = store.profiles) }
                 activate(p.id)
-                toast("整合完成，去重后 " + count + " 个节点")
+                toast("整合完成：" + sources.size + " 个订阅，去重后 " + count + " 个节点")
             } finally {
                 _state.update { it.copy(busy = false) }
             }

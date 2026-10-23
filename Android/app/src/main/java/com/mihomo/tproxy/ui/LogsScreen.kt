@@ -82,7 +82,7 @@ fun LogsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickable { onBack() },
+                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickableNoRipple { onBack() },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Rounded.ArrowBack, "返回", tint = Palette.text, modifier = Modifier.size(18.dp)) }
             Spacer(Modifier.width(12.dp))
@@ -92,12 +92,12 @@ fun LogsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
             }
             Box(
                 Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f))
-                    .clickable { clipboard.setText(AnnotatedString(lines.joinToString("\n"))) },
+                    .clickableNoRipple { clipboard.setText(AnnotatedString(lines.joinToString("\n"))) },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Rounded.ContentCopy, "复制", tint = Palette.textDim, modifier = Modifier.size(17.dp)) }
             Spacer(Modifier.width(8.dp))
             Box(
-                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickable { vm.clearLogs() },
+                Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)).clickableNoRipple { vm.clearLogs() },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Rounded.DeleteSweep, "清空", tint = Palette.textDim, modifier = Modifier.size(18.dp)) }
         }
@@ -132,7 +132,7 @@ fun LogsScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
                             if (on) Palette.primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.07f),
                             RoundedCornerShape(11.dp)
                         )
-                        .clickable { level = lv }
+                        .clickableNoRipple { level = lv }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(lv.label, color = if (on) Palette.text else Palette.textDim, fontSize = 11.5.sp)
