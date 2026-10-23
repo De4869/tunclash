@@ -159,6 +159,99 @@ function render(){const v=document.getElementById("view");if(state.tab==="home")
 function renderHome(v){const cur=state.current||"未选择";v.innerHTML='<div class="hero"><div class="orb '+(state.running&&state.mode!=="direct"?"on":"")+'" onclick="toggle()"><div style="display:flex;flex-direction:column;align-items:center"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="'+(state.running?"#fff":"var(--dim)")+'" stroke-width="2" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg><div class="lbl">'+(state.running?(state.mode==="direct"?"已暂停":"已连接"):"未连接")+'</div></div></div><div class="state">'+(!state.running?"内核未运行":state.mode==="direct"?"内核运行中 · 流量直连":"正在接管全部流量")+'</div><div class="substate">'+(state.running?"TUN · 已接管":"点击圆环启动")+'</div></div>'+'<div class="stats"><div class="stat"><div class="k">↑ 上传</div><div class="v" style="color:var(--cyan)" id="up">0 B/s</div><div class="t" id="upT">累计 0 B</div></div><div class="stat"><div class="k">↓ 下载</div><div class="v" style="color:var(--ok)" id="down">0 B/s</div><div class="t" id="downT">累计 0 B</div></div></div>'+'<div class="seg">'+["rule","global","direct"].map(m=>'<div class="it '+(state.mode===m?"on":"")+'" onclick="setMode(\''+m+'\')">'+({rule:"规则",global:"全局",direct:"直连"})[m]+'</div>').join("")+'</div>'+'<div class="card"><div class="ttl">当前节点</div><div class="big">'+esc(cur)+'</div><div class="row" style="margin-top:6px"><div class="grow muted">'+state.groups.length+' 个策略组 · '+Object.keys(state.nodes).length+' 个节点</div><button class="btn ghost" onclick="refresh().then(render)">刷新</button></div></div>'+'<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost" onclick="updateCore()">更新内核</button><button class="btn ghost" onclick="restartCore()">重启内核</button><button class="btn ghost" onclick="toggle()">'+(state.running?"暂停 / 恢复":"启动")+'</button></div></div>';pollTraffic();}
 async function renderNodes(v){const gs=state.groups;if(!window.__g&&gs[0])window.__g=gs[0].name;const g=gs.find(x=>x.name===window.__g)||gs[0];const q=(state.search||"").toLowerCase();const gnames={};gs.forEach(x=>gnames[x.name]=1);
   let ns=(g&&g.all?g.all:[]).filter(n=>state.nodes[n]&&!gnames[n]).filter(n=>!q||n.toLowerCase().includes(q));if(state.sort)ns=ns.slice().sort((a,b)=>{const da=(state.nodes[a]&&state.nodes[a].history&&state.nodes[a].history.slice(-1)[0]?state.nodes[a].history.slice(-1)[0].delay:0)||0;const db=(state.nodes[b]&&state.nodes[b].history&&state.nodes[b].history.slice(-1)[0]?state.nodes[b].history.slice(-1)[0].delay:0)||0;return (da<=0?1e9:da)-(db<=0?1e9:db);});v.innerHTML='<div class="chips">'+gs.map(x=>'<div class="chip '+(x.name===window.__g?"on":"")+'" onclick="pickGroup(\''+encodeURIComponent(x.name)+'\')">'+esc(x.name)+'</div>').join("")+'</div>'+'<div style="margin-top:10px"><input placeholder="搜索节点 / 地区" value="'+esc(state.search)+'" oninput="state.search=this.value;render()"></div>'+'<div class="row" style="margin-top:8px;justify-content:space-between"><div class="row" style="gap:8px"><div class="chip '+(state.sort?"on":"")+'" onclick="state.sort=!state.sort;render()">按延迟排序</div><span class="muted">'+ns.length+' 个节点</span></div><button class="btn ghost" onclick="speedTest()">测速本组</button></div>'+'<div class="list nlist">'+(ns.length?ns.map(n=>{const p=state.nodes[n]||{};const d=(p.history&&p.history.length)?p.history[p.history.length-1].delay:0;const cls=d>0?(d<200?"g":d<500?"y":"r"):"";return '<div class="item '+(g.now===n?"sel":"")+'" onclick="selectNode(\''+encodeURIComponent(g.name)+'\',\''+encodeURIComponent(n)+'\')"><div class="grow"><div class="nm">'+esc(n)+'</div><div class="sb">'+esc(p.type||"")+'</div></div><div class="badge '+cls+'">'+(d>0?d+"ms":"—")+'</div></div>';}).join(""):'<div class="empty">该组暂无节点</div>')+'</div>';}
+
+function b64d(s){s=String(s||"").replace(/-/g,"+").replace(/_/g,"/").trim();while(s.length%4)s+="=";try{return decodeURIComponent(escape(atob(s)));}catch(e){try{return atob(s);}catch(e2){return "";}}}
+function qsp(u){const i=u.indexOf("?");const o={};if(i<0)return o;u.slice(i+1).split("#")[0].split("&").forEach(function(kv){if(!kv)return;const k=kv.split("=")[0];o[decodeURIComponent(k)]=decodeURIComponent(kv.slice(k.length+1)||"");});return o;}
+function fragOf(u){const i=u.indexOf("#");return i>=0?decodeURIComponent(u.slice(i+1)):"";}
+function ysq(v){return "'"+String(v==null?"":v).replace(/'/g,"''")+"'";}
+function portOf(s){const n=parseInt(s,10);return isNaN(n)?443:n;}
+var JUNK=/剩余流量|套餐|到期|过期|已用流量|重置|官网|订阅|客服|试用|流量/;
+function linkToClash(link){
+  const scheme=link.split("://")[0].toLowerCase();
+  const body=link.slice(scheme.length+3);
+  const noFrag=body.split("#")[0];
+  const name=fragOf(body);
+  if(name&&JUNK.test(name))return null;
+  if(scheme==="vmess"){
+    let j;try{j=JSON.parse(b64d(noFrag));}catch(e){return null;}
+    if(!j||!j.add)return null;
+    const nm=j.ps||name||j.add; if(JUNK.test(nm))return null;
+    const net=j.net||"tcp";
+    const p=["name: "+ysq(nm),"type: vmess","server: "+ysq(j.add),"port: "+portOf(j.port),"uuid: "+ysq(j.id),"alterId: "+(parseInt(j.aid||"0",10)||0),"cipher: "+ysq(j.scy||"auto"),"udp: true"];
+    if(j.tls==="tls"){p.push("tls: true");if(j.sni||j.host)p.push("servername: "+ysq(j.sni||j.host));}
+    p.push("network: "+ysq(net));
+    if(net==="ws")p.push("ws-opts: { path: "+ysq(j.path||"/")+", headers: { Host: "+ysq(j.host||j.add)+" } }");
+    return "- { "+p.join(", ")+" }";
+  }
+  const at=noFrag.lastIndexOf("@"); if(at<0)return null;
+  const cred=noFrag.slice(0,at);
+  const hp=noFrag.slice(at+1).split("/")[0].split(":");
+  const host=hp[0],port=portOf(hp[1]);
+  const q=qsp(noFrag);
+  const insecure=q.insecure==="1"||q.insecure==="true"||q.allowInsecure==="1";
+  if(!host||JUNK.test(name||""))return null;
+  const nm2=name||(host+":"+port);
+  if(scheme==="vless"){
+    const p=["name: "+ysq(nm2),"type: vless","server: "+ysq(host),"port: "+port,"uuid: "+ysq(cred),"udp: true","network: "+ysq(q.type||"tcp")];
+    if(q.security==="tls"||q.security==="reality"){p.push("tls: true");if(q.sni||q.host)p.push("servername: "+ysq(q.sni||q.host));if(q.fp)p.push("client-fingerprint: "+ysq(q.fp));if(q.security==="reality")p.push("reality-opts: { public-key: "+ysq(q.pbk||"")+", short-id: "+ysq(q.sid||"")+" }");}
+    if(q.flow)p.push("flow: "+ysq(q.flow));
+    if((q.type||"")==="ws")p.push("ws-opts: { path: "+ysq(q.path||"/")+", headers: { Host: "+ysq(q.host||host)+" } }");
+    if(insecure)p.push("skip-cert-verify: true");
+    return "- { "+p.join(", ")+" }";
+  }
+  if(scheme==="trojan"){
+    const p=["name: "+ysq(nm2),"type: trojan","server: "+ysq(host),"port: "+port,"password: "+ysq(cred),"udp: true"];
+    if(q.sni)p.push("sni: "+ysq(q.sni));
+    if(q.type==="ws")p.push("network: ws","ws-opts: { path: "+ysq(q.path||"/")+", headers: { Host: "+ysq(q.host||host)+" } }");
+    if(insecure)p.push("skip-cert-verify: true");
+    return "- { "+p.join(", ")+" }";
+  }
+  if(scheme==="hysteria2"||scheme==="hy2"){
+    const p=["name: "+ysq(nm2),"type: hysteria2","server: "+ysq(host),"port: "+port,"password: "+ysq(decodeURIComponent(cred))];
+    if(q.sni)p.push("sni: "+ysq(q.sni));
+    if(q.obfs){p.push("obfs: "+ysq(q.obfs));if(q["obfs-password"])p.push("obfs-password: "+ysq(q["obfs-password"]));}
+    if(insecure)p.push("skip-cert-verify: true");
+    return "- { "+p.join(", ")+" }";
+  }
+  if(scheme==="anytls"){
+    const p=["name: "+ysq(nm2),"type: anytls","server: "+ysq(host),"port: "+port,"password: "+ysq(decodeURIComponent(cred)),"udp: true"];
+    if(q.sni)p.push("sni: "+ysq(q.sni));
+    if(q.fp)p.push("client-fingerprint: "+ysq(q.fp));
+    if(insecure)p.push("skip-cert-verify: true");
+    return "- { "+p.join(", ")+" }";
+  }
+  if(scheme==="tuic"){
+    const cp=cred.split(":");
+    const p=["name: "+ysq(nm2),"type: tuic","server: "+ysq(host),"port: "+port,"uuid: "+ysq(cp[0]||""),"password: "+ysq(decodeURIComponent(cp[1]||"")),"udp: true"];
+    if(q.sni)p.push("sni: "+ysq(q.sni));
+    if(insecure)p.push("skip-cert-verify: true");
+    return "- { "+p.join(", ")+" }";
+  }
+  if(scheme==="ss"){
+    let method,pass;
+    if(cred.indexOf(":")>=0){const m=cred.split(":");method=m[0];pass=m.slice(1).join(":");}
+    else{const d=b64d(cred);method=d.split(":")[0];pass=d.split(":").slice(1).join(":");}
+    return "- { name: "+ysq(nm2)+", type: ss, server: "+ysq(host)+", port: "+port+", cipher: "+ysq(method)+", password: "+ysq(pass)+", udp: true }";
+  }
+  return null;
+}
+function shareToYaml(text){
+  let raw=String(text||"").trim();
+  if(!/\w+:\/\//.test(raw)) raw=b64d(raw);
+  const out=[];
+  raw.split(/\r?\n/).forEach(function(line){const l=line.trim();if(!l||l.charAt(0)==="#")return;const y=linkToClash(l);if(y)out.push(y);});
+  return out.length?("proxies:\n"+out.join("\n")+"\n"):"";
+}
+async function convertShareSub(idx){
+  const raw=await sh("cat "+DIR+"/data/sub"+idx+".yaml 2>/dev/null");
+  if(!raw) return 0;
+  if(raw.indexOf("proxies:")>=0) return 0;
+  const y=shareToYaml(raw);
+  if(!y) return 0;
+  const n=(y.match(/^- \{/gm)||[]).length;
+  if(n>0) await writeFile(DIR+"/data/p"+idx+".yaml", y);
+  return n;
+}
 async function renderSubs(v){
   const n = parseInt(await sh("wc -l < "+DIR+"/subs.list 2>/dev/null") || "0", 10) || 0;
   const rows = [];
@@ -185,9 +278,10 @@ async function pickGroup(n){window.__g=decodeURIComponent(n);render();}
 async function selectNode(g,n){await api("/proxies/"+g,"PUT",JSON.stringify({name:decodeURIComponent(n)}));toast("已切换节点");setTimeout(()=>refresh().then(render),500);}
 async function speedTest(){const g=state.groups.find(x=>x.name===window.__g)||state.groups[0];if(!g)return;toast("测速中…");const r=await api("/group/"+encodeURIComponent(g.name)+"/delay?url="+encodeURIComponent("http://www.gstatic.com/generate_204")+"&timeout=3000");if(!r){toast("测速失败");return;}for(const k in r)if(state.nodes[k])state.nodes[k].history=[{delay:r[k]}];const best=Object.keys(r).filter(k=>r[k]>0).sort((a,b)=>r[a]-r[b])[0];if(best)await api("/proxies/"+encodeURIComponent(g.name),"PUT",JSON.stringify({name:best}));toast(best?"最快："+best+" "+r[best]+"ms":"全部超时");setTimeout(()=>refresh().then(render),600);}
 async function updateCore(){toast("检查更新…");await sh("nohup sh "+DIR+"/update_core.sh >/dev/null 2>&1 &");for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,3000));const t=await sh("tail -n 2 "+DIR+"/logs/update.log 2>/dev/null");if(t){toast(t.trim().split("\n").pop());if(/updated to|already latest|failed/.test(t))break;}}refresh().then(render);}
-async function addSub(){const u=(document.getElementById("subUrl").value||"").trim();const n=(document.getElementById("subName").value||"").trim()||("订阅 "+Date.now().toString().slice(-4));if(!u.startsWith("http")){toast("请输入 http(s) 订阅链接");return;}if(/['"\s]/.test(u)){toast("链接包含非法字符");return;}toast("下载订阅…");const idx=Number(await sh("ls "+DIR+"/data/sub*.yaml 2>/dev/null | wc -l"));const r=await sh("curl -L --max-time 40 -o "+DIR+"/data/sub"+idx+".yaml '"+u+"' && echo ok");if(r.indexOf("ok")<0){toast("下载失败");return;}await sh("printf '%s\\n' '"+(n.replace(/'/g,""))+"|"+u+"' >> "+DIR+"/subs.list");await sh("sh "+DIR+"/gen.sh >/dev/null 2>&1 && sh "+DIR+"/ctl.sh restart");setTimeout(()=>refresh().then(render),1500);}
+async function addSub(){const u=(document.getElementById("subUrl").value||"").trim();const n=(document.getElementById("subName").value||"").trim()||("订阅 "+Date.now().toString().slice(-4));if(!u.startsWith("http")){toast("请输入 http(s) 订阅链接");return;}if(/['"\s]/.test(u)){toast("链接包含非法字符");return;}toast("下载订阅…");const idx=Number(await sh("ls "+DIR+"/data/sub*.yaml 2>/dev/null | wc -l"));const r=await sh("curl -L --max-time 40 -o "+DIR+"/data/sub"+idx+".yaml '"+u+"' && echo ok");if(r.indexOf("ok")<0){toast("下载失败");return;}await sh("printf '%s\\n' '"+(n.replace(/'/g,""))+"|"+u+"' >> "+DIR+"/subs.list");
+  const conv=await convertShareSub(idx); if(conv>0) toast("已转换 "+conv+" 个分享链接节点");await sh("sh "+DIR+"/gen.sh >/dev/null 2>&1 && sh "+DIR+"/ctl.sh restart");setTimeout(()=>refresh().then(render),1500);}
 async function delSub(i){const raw=await sh("cat "+DIR+"/subs.list");const rows=raw.split("\n").filter(Boolean).filter((_,k)=>k!==i);await writeFile(DIR+"/subs.list",rows.join("\n")+(rows.length?"\n":""));await sh("sh "+DIR+"/gen.sh >/dev/null 2>&1 && sh "+DIR+"/ctl.sh restart");toast("已删除");setTimeout(()=>refresh().then(render),1200);}
-async function updateSubs(){const raw=await sh("cat "+DIR+"/subs.list");const rows=raw.split("\n").filter(Boolean).map(l=>l.split("|"));toast("更新中…");for(let i=0;i<rows.length;i++){const u=rows[i][1];if(u)await sh("curl -L --max-time 40 -o "+DIR+"/data/sub"+i+".yaml '"+u+"'");}await sh("sh "+DIR+"/gen.sh >/dev/null 2>&1 && sh "+DIR+"/ctl.sh restart");toast("已更新");setTimeout(()=>refresh().then(render),1200);}
+async function updateSubs(){const raw=await sh("cat "+DIR+"/subs.list");const rows=raw.split("\n").filter(Boolean).map(l=>l.split("|"));toast("更新中…");for(let i=0;i<rows.length;i++){const u=rows[i][1];if(u){await sh("curl -L --max-time 40 -o "+DIR+"/data/sub"+i+".yaml '"+u+"'");await convertShareSub(i);}}await sh("sh "+DIR+"/gen.sh >/dev/null 2>&1 && sh "+DIR+"/ctl.sh restart");toast("已更新");setTimeout(()=>refresh().then(render),1200);}
 let lastT=0,lastUp=0,lastDown=0;
 async function pollTraffic(){if(!state.running)return;const c=await api("/connections");if(!c)return;const up=Number(c.uploadTotal||0),down=Number(c.downloadTotal||0),now=Date.now();if(lastT){const dt=Math.max((now-lastT)/1000,.5);const u=document.getElementById("up"),d=document.getElementById("down");if(u)u.textContent=fmt(Math.max(0,(up-lastUp)/dt))+"/s";if(d)d.textContent=fmt(Math.max(0,(down-lastDown)/dt))+"/s";}const ut=document.getElementById("upT"),dt2=document.getElementById("downT");if(ut)ut.textContent="累计 "+fmt(up);if(dt2)dt2.textContent="累计 "+fmt(down);lastT=now;lastUp=up;lastDown=down;}
 function boot(){applyTheme(localStorage.getItem("tc-theme")||"dark");window.addEventListener("resize",()=>movePill(["home","nodes","subs","logs"].indexOf(state.tab)));refresh().then(()=>tab("home"));setInterval(()=>{refresh().then(render);},7000);setInterval(pollTraffic,2000);}

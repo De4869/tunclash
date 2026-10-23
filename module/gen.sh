@@ -24,7 +24,9 @@ if [ -f "$LIST" ]; then
   while IFS='|' read -r name url; do
     [ -z "$name" ] && continue
     f="sub${i}.yaml"
-    if [ -f "$DATA/$f" ] && grep -q "proxies:" "$DATA/$f"; then
+    if [ -f "$DATA/p$i.yaml" ] && grep -q "name:" "$DATA/p$i.yaml"; then
+      USED="$USED sub$i"
+    elif [ -f "$DATA/$f" ] && grep -q "proxies:" "$DATA/$f"; then
       # a subscription is a full Clash config; a provider must contain only the proxies list
       awk 'BEGIN{p=0} /^proxies:/{p=1; print; next} p && /^[A-Za-z0-9_-]+:/{exit} p{print}' "$DATA/$f" > "$DATA/p$i.yaml"
       if [ "$(grep -c 'name:' "$DATA/p$i.yaml" 2>/dev/null)" -gt 0 ]; then
