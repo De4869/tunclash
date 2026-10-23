@@ -65,6 +65,8 @@
   .item.sel{border-color:var(--pillLine);background:var(--pill)}
   .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sb{font-size:9.5px;color:var(--faint);margin-top:2px}
+  .url{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
+  .item .btn{flex:0 0 auto}
   .g{color:var(--ok)} .y{color:var(--warn)} .r{color:var(--red)}
   input{width:100%;padding:11px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:12.5px;outline:none}
   .btn{padding:9px 14px;border-radius:13px;font-size:12px;font-weight:600;border:1px solid transparent;background:var(--blue);color:#fff}
@@ -84,6 +86,8 @@
   .nav .tab{position:relative;flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--faint);font-size:10px;z-index:1}
   .nav .tab.on{color:var(--blue);font-weight:600}
   .nav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .fade{position:fixed;left:0;right:0;bottom:0;height:104px;pointer-events:none;z-index:2;
+    background:linear-gradient(180deg,transparent,var(--bg) 62%)}
   .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(16px);background:var(--glass);
     border:1px solid var(--line);color:var(--text);padding:10px 15px;border-radius:14px;font-size:12px;opacity:0;transition:.25s;max-width:86vw;z-index:9}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -105,6 +109,7 @@
   <div class="tab" onclick="tab('subs')"><svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 0 1 .6-8 5.5 5.5 0 0 1 10.5 1.6A3.6 3.6 0 0 1 17.5 18H7z"/></svg><span>订阅</span></div>
   <div class="tab" onclick="tab('logs')"><svg viewBox="0 0 24 24"><path d="m5 7 4 5-4 5M12 17h7"/></svg><span>日志</span></div>
 </nav>
+<div class="fade"></div>
 <div class="toast" id="toast"></div>
 <script>
 const DIR="/data/adb/mihomo_tproxy", API="http://127.0.0.1:9090";
@@ -112,7 +117,19 @@ const KSU=window.ksu||window.kernelsu||null;
 let secret="";
 const state={running:false,mode:"rule",groups:[],nodes:{},current:"",tab:"home",search:"",sort:false,level:"all",q:"",version:""};
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);}
-async function sh(cmd){if(!KSU)throw new Error("no ksu");const r=await KSU.exec(cmd);return typeof r==="string"?r.trim():((r&&r.stdout)||"").trim();}
+async function sh(cmd){
+  if(!KSU) throw new Error("no ksu");
+  const r = await KSU.exec(cmd);
+  let out = "";
+  if (typeof r === "string") {
+    out = r;
+    const t = r.trim();
+    if (t.charAt(0) === "{") { try { const j = JSON.parse(t); if (j && typeof j.stdout === "string") out = j.stdout; } catch(e){} }
+  } else if (r && r.stdout != null) {
+    out = String(r.stdout);
+  }
+  return out.replace(/\r/g, "").replace(/\s+$/, "");
+}
 function b64(s){return btoa(unescape(encodeURIComponent(s)));}
 async function writeFile(p,t){await sh("printf '%s' '"+b64(t)+"' | base64 -d > '"+p+"'");}
 async function api(path,method,body){let c="curl -s -m 6 -H 'Authorization: Bearer "+secret+"' ";if(method&&method!=="GET"){if(body!==undefined){await writeFile("/data/local/tmp/.tc_body.json",body);c+="-X "+method+" -H 'Content-Type: application/json' --data-binary @/data/local/tmp/.tc_body.json ";}else c+="-X "+method+" ";}c+="'"+API+path+"'";const o=await sh(c);if(!o)return null;try{return JSON.parse(o);}catch(e){return null;}}
@@ -121,7 +138,9 @@ function fmt(v){v=Number(v)||0;if(v<1024)return Math.round(v)+" B";if(v<1048576)
 function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.setItem("tc-theme",t);const b=document.getElementById("themeBtn");if(b)b.textContent=t==="light"?"☀":"☾";}
 function toggleTheme(){applyTheme(document.documentElement.dataset.theme==="light"?"dark":"light");}
-async function refresh(){try{await loadSecret();const pid=await sh("sh "+DIR+"/ctl.sh status");state.running=pid.indexOf("running")>=0;const ver=state.running?await api("/version"):null;const cfg=state.running?await api("/configs"):null;state.mode=(cfg&&cfg.mode)||"rule";const px=state.running?await api("/proxies"):null;if(px&&px.proxies){state.groups=[];state.nodes={};for(const k in px.proxies){const p=px.proxies[k];if(p.all)state.groups.push(p);else state.nodes[k]=p;}state.groups.sort((a,b)=>(a.name==="🚀 节点选择"?-1:0)-(b.name==="🚀 节点选择"?-1:0));const g=state.groups.find(x=>x.name==="🚀 节点选择")||state.groups.find(x=>x.type==="Selector")||state.groups[0];state.current=g?g.now:"";}state.version=ver?ver.version:"";
+async function refresh(){try{await loadSecret();const pid=await sh("sh "+DIR+"/ctl.sh status");state.running=pid.indexOf("running")>=0;const ver=state.running?await api("/version"):null;const cfg=state.running?await api("/configs"):null;state.mode=(cfg&&cfg.mode)||"rule";const px=state.running?await api("/proxies"):null;if(px&&px.proxies){state.groups=[];state.nodes={};
+      var BUILTIN0={DIRECT:1,REJECT:1,"REJECT-DROP":1,PASS:1,"PASS-RULE":1,COMPATIBLE:1};
+      for(const k in px.proxies){const p=px.proxies[k];if(p.all)state.groups.push(p);else if(!BUILTIN0[k])state.nodes[k]=p;}state.groups.sort((a,b)=>(a.name==="🚀 节点选择"?-1:0)-(b.name==="🚀 节点选择"?-1:0));const g=state.groups.find(x=>x.name==="🚀 节点选择")||state.groups.find(x=>x.type==="Selector")||state.groups[0];state.current=g?g.now:"";}state.version=ver?ver.version:"";
     // provider nodes live inside group.all rather than at the top level of /proxies
     var groupNames={}; state.groups.forEach(function(g){ groupNames[g.name]=1; });
     var BUILTIN={DIRECT:1,REJECT:1,"REJECT-DROP":1,PASS:1,"PASS-RULE":1,COMPATIBLE:1};
@@ -140,10 +159,24 @@ function render(){const v=document.getElementById("view");if(state.tab==="home")
 function renderHome(v){const cur=state.current||"未选择";v.innerHTML='<div class="hero"><div class="orb '+(state.running&&state.mode!=="direct"?"on":"")+'" onclick="toggle()"><div><div class="ico">⏻</div><div class="lbl">'+(state.running?(state.mode==="direct"?"已暂停":"已连接"):"未连接")+'</div></div></div><div class="state">'+(!state.running?"内核未运行":state.mode==="direct"?"内核运行中 · 流量直连":"正在接管全部流量")+'</div><div class="substate">'+(state.running?"TUN · "+Object.keys(state.nodes).length+" 个节点":"点击圆环启动")+'</div></div>'+'<div class="stats"><div class="stat"><div class="k">↑ 上传</div><div class="v" style="color:var(--cyan)" id="up">0 B/s</div><div class="t" id="upT">累计 0 B</div></div><div class="stat"><div class="k">↓ 下载</div><div class="v" style="color:var(--ok)" id="down">0 B/s</div><div class="t" id="downT">累计 0 B</div></div></div>'+'<div class="seg">'+["rule","global","direct"].map(m=>'<div class="it '+(state.mode===m?"on":"")+'" onclick="setMode(\''+m+'\')">'+({rule:"规则",global:"全局",direct:"直连"})[m]+'</div>').join("")+'</div>'+'<div class="card"><div class="ttl">当前节点</div><div class="big">'+esc(cur)+'</div><div class="row" style="margin-top:6px"><div class="grow muted">'+state.groups.length+' 个策略组 · '+Object.keys(state.nodes).length+' 个节点</div><button class="btn ghost" onclick="refresh().then(render)">刷新</button></div></div>'+'<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost" onclick="updateCore()">更新内核</button><button class="btn ghost" onclick="restartCore()">重启内核</button><button class="btn ghost" onclick="toggle()">'+(state.running?"暂停 / 恢复":"启动")+'</button></div></div>';pollTraffic();}
 async function renderNodes(v){const gs=state.groups;if(!window.__g&&gs[0])window.__g=gs[0].name;const g=gs.find(x=>x.name===window.__g)||gs[0];const q=(state.search||"").toLowerCase();const gnames={};gs.forEach(x=>gnames[x.name]=1);
   let ns=(g&&g.all?g.all:[]).filter(n=>state.nodes[n]&&!gnames[n]).filter(n=>!q||n.toLowerCase().includes(q));if(state.sort)ns=ns.slice().sort((a,b)=>{const da=(state.nodes[a]&&state.nodes[a].history&&state.nodes[a].history.slice(-1)[0]?state.nodes[a].history.slice(-1)[0].delay:0)||0;const db=(state.nodes[b]&&state.nodes[b].history&&state.nodes[b].history.slice(-1)[0]?state.nodes[b].history.slice(-1)[0].delay:0)||0;return (da<=0?1e9:da)-(db<=0?1e9:db);});v.innerHTML='<div class="chips">'+gs.map(x=>'<div class="chip '+(x.name===window.__g?"on":"")+'" onclick="pickGroup(\''+encodeURIComponent(x.name)+'\')">'+esc(x.name)+'</div>').join("")+'</div>'+'<div style="margin-top:10px"><input placeholder="搜索节点 / 地区" value="'+esc(state.search)+'" oninput="state.search=this.value;render()"></div>'+'<div class="row" style="margin-top:8px;justify-content:space-between"><div class="row" style="gap:8px"><div class="chip '+(state.sort?"on":"")+'" onclick="state.sort=!state.sort;render()">按延迟排序</div><span class="muted">'+ns.length+' 个节点</span></div><button class="btn ghost" onclick="speedTest()">测速本组</button></div>'+'<div class="list nlist">'+(ns.length?ns.map(n=>{const p=state.nodes[n]||{};const d=(p.history&&p.history.length)?p.history[p.history.length-1].delay:0;const cls=d>0?(d<200?"g":d<500?"y":"r"):"";return '<div class="item '+(g.now===n?"sel":"")+'" onclick="selectNode(\''+encodeURIComponent(g.name)+'\',\''+encodeURIComponent(n)+'\')"><div class="grow"><div class="nm">'+esc(n)+'</div><div class="sb">'+esc(p.type||"")+'</div></div><div class="badge '+cls+'">'+(d>0?d+"ms":"—")+'</div></div>';}).join(""):'<div class="empty">该组暂无节点</div>')+'</div>';}
-async function renderSubs(v){const raw=await sh("cat "+DIR+"/subs.list 2>/dev/null");const rows=raw.split("\n").filter(Boolean).map(l=>{const p=l.split("|");return {name:p[0]||"",url:p[1]||"",count:0};});for(let i=0;i<rows.length;i++){const head=await sh("head -c 60 "+DIR+"/data/sub"+i+".yaml 2>/dev/null");rows[i].clash=/proxies:|mixed-port:|^port:/i.test(head)||head.indexOf("proxies")>=0;const c=rows[i].clash?await sh("grep -c 'name:' "+DIR+"/data/sub"+i+".yaml 2>/dev/null"):"0";rows[i].count=parseInt(c||"0",10)||0;}const total=rows.reduce((a,r)=>a+(r.count||0),0);v.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><div><div class="ttl">订阅概览</div><div class="big">'+rows.length+' 个订阅 · '+total+' 个节点</div><div class="muted" style="margin-top:4px">provider 模式 · 由 gen.sh 汇总</div></div><div class="badge">provider</div></div></div>'+'<div class="card"><div class="ttl">添加 Clash 订阅</div><div style="margin-top:8px"><input id="subUrl" placeholder="https://..."></div><div class="row" style="margin-top:8px"><input id="subName" placeholder="备注名（可选）" style="flex:1"><button class="btn" onclick="addSub()">添加</button></div></div>'+'<div class="list">'+(rows.length?rows.map((r,i)=>'<div class="item"><div class="grow"><div class="nm">'+esc(r.name)+'</div><div class="sb">'+esc(r.url)+'</div></div><div class="badge">'+r.count+' 节点</div><button class="btn ghost" onclick="delSub('+i+')">删除</button></div>').join(""):'<div class="empty">还没有订阅</div>')+'</div>'+'<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost" onclick="updateSubs()">更新全部</button><button class="btn ghost" onclick="refresh().then(render)">刷新</button></div></div>';}
+async function renderSubs(v){
+  const n = parseInt(await sh("wc -l < "+DIR+"/subs.list 2>/dev/null") || "0", 10) || 0;
+  const rows = [];
+  for (let k = 0; k < n; k++) {
+    const line = await sh("sed -n '" + (k+1) + "p' " + DIR + "/subs.list 2>/dev/null");
+    if (!line) continue;
+    const p = line.split("|");
+    rows.push({ name: p[0] || "", url: p[1] || "", count: 0, clash: false, mtime: "" });
+  }for (let i = 0; i < rows.length; i++) {
+    const c = parseInt(await sh("grep -c 'name:' " + DIR + "/data/p" + i + ".yaml 2>/dev/null") || "0", 10) || 0;
+    rows[i].count = c;
+    rows[i].clash = c > 0;
+    rows[i].mtime = await sh("stat -c %y " + DIR + "/data/sub" + i + ".yaml 2>/dev/null | cut -d. -f1");
+  }const total=rows.reduce((a,r)=>a+(r.count||0),0);v.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><div><div class="ttl">订阅概览</div><div class="big">'+rows.length+' 个订阅 · '+total+' 个节点</div><div class="muted" style="margin-top:4px">provider 模式 · 由 gen.sh 汇总</div></div><div class="badge">provider</div></div></div>'+'<div class="card"><div class="ttl">添加 Clash 订阅</div><div style="margin-top:8px"><input id="subUrl" placeholder="https://..."></div><div class="row" style="margin-top:8px"><input id="subName" placeholder="备注名（可选）" style="flex:1"><button class="btn" onclick="addSub()">添加</button></div></div>'+'<div class="list">'+(rows.length?rows.map((r,i)=>'<div class="item"><div class="grow"><div class="nm">'+esc(r.name)+'</div><div class="sb">'+esc(r.url)+'</div></div><div class="badge">'+r.count+' 节点</div><button class="btn ghost" onclick="delSub('+i+')">删除</button></div>').join(""):'<div class="empty">还没有订阅</div>')+'</div>'+'<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost" onclick="updateSubs()">更新全部</button><button class="btn ghost" onclick="refresh().then(render)">刷新</button></div></div>';}
 let logTimer=null;
 function filterLog(t){return (t||"").split("\n").filter(l=>{if(state.level==="warn")return /warn/i.test(l);if(state.level==="error")return /error|fatal/i.test(l);return true;}).filter(l=>!state.q||l.toLowerCase().includes(state.q.toLowerCase())).join("\n")||"暂无日志";}
-async function renderLogs(v){clearInterval(logTimer);const log=await sh("tail -n 120 "+DIR+"/logs/core.log 2>/dev/null");v.innerHTML='<div class="row" style="gap:8px"><div style="flex:1"><input placeholder="搜索日志" value="'+esc(state.q)+'" oninput="state.q=this.value;render()"></div><button class="btn ghost" onclick="clearLogs()">清空</button></div>'+'<div class="chips" style="margin-top:10px">'+[["all","全部"],["warn","警告"],["error","错误"]].map(([k,l])=>'<div class="chip '+(state.level===k?"on":"")+'" onclick="state.level=\''+k+'\';render()">'+l+'</div>').join("")+'</div>'+'<div class="card scroll" style="margin-top:10px"><pre id="logbox">'+esc(filterLog(log))+'</pre></div>';const b=document.getElementById("logbox");if(b)b.scrollTop=b.scrollHeight;logTimer=setInterval(async()=>{if(state.tab!=="logs"){clearInterval(logTimer);return;}const x=document.getElementById("logbox");if(!x)return;const t=await sh("tail -n 120 "+DIR+"/logs/core.log 2>/dev/null");x.textContent=filterLog(t||"");x.scrollTop=x.scrollHeight;},3000);}
+async function renderLogs(v){clearInterval(logTimer);const log=await sh("tail -n 120 "+DIR+"/logs/core.log 2>/dev/null");v.innerHTML='<div class="row" style="gap:8px"><div style="flex:1"><input placeholder="搜索日志" value="'+esc(state.q)+'" oninput="state.q=this.value;render()"></div><button class="btn ghost" onclick="copyLogs()">复制</button><button class="btn ghost" onclick="clearLogs()">清空</button></div>'
+    +'<div class="muted" style="margin-top:8px" id="loginfo">共 '+String(log||"").split("\n").length+' 行</div>'+'<div class="chips" style="margin-top:10px">'+[["all","全部"],["warn","警告"],["error","错误"]].map(([k,l])=>'<div class="chip '+(state.level===k?"on":"")+'" onclick="state.level=\''+k+'\';render()">'+l+'</div>').join("")+'</div>'+'<div class="card scroll" style="margin-top:10px"><pre id="logbox">'+esc(filterLog(log))+'</pre></div>';const b=document.getElementById("logbox");if(b)b.scrollTop=b.scrollHeight;logTimer=setInterval(async()=>{if(state.tab!=="logs"){clearInterval(logTimer);return;}const x=document.getElementById("logbox");if(!x)return;const t=await sh("tail -n 120 "+DIR+"/logs/core.log 2>/dev/null");x.textContent=filterLog(t||"");x.scrollTop=x.scrollHeight;},3000);}
 async function clearLogs(){await sh(": > "+DIR+"/logs/core.log");toast("已清空");render();}
 async function toggle(){try{if(!state.running){toast("启动中…");await sh("sh "+DIR+"/ctl.sh start");}else{const n=state.mode==="direct"?"rule":"direct";await api("/configs","PATCH",JSON.stringify({mode:n}));toast(n==="direct"?"已暂停":"已恢复");}}catch(e){toast("操作失败");}setTimeout(()=>refresh().then(render),800);}
 async function setMode(m){try{await api("/configs","PATCH",JSON.stringify({mode:m}));toast("已切换模式");}catch(e){}setTimeout(()=>refresh().then(render),500);}
