@@ -1,5 +1,10 @@
 # Mihomo 透明代理 · Mihomo TProxy
 
+[![CI](https://github.com/De4869/mihomo-tproxy/actions/workflows/ci.yml/badge.svg)](https://github.com/De4869/mihomo-tproxy/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/De4869/mihomo-tproxy)](https://github.com/De4869/mihomo-tproxy/releases)
+![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 给 **已 Root 的安卓手机**（KernelSU / Magisk / APatch / SukiSU）用的 mihomo 透明代理方案：
 **App 图形界面 + mihomo 1.19.14 内核 + Root 级 TUN 全局接管**，不占用系统 VPN 入口，状态栏不会出现 VPN 图标，也不会被"检测 VPN"的 App 识别。
 
@@ -26,7 +31,20 @@
 | **分流规则** | 内置智能分流（GEOSITE/GEOIP 国内直连）、全局代理、全局直连；广告拦截开关；可视化分应用黑白名单 |
 | **实时状态** | 上下行速率、累计流量、运行时长、节点延迟、内核日志（实时流） |
 | **开机自启** | 写入 `/data/adb/service.d`，开机 25 秒后自动拉起 |
-| **模块化** | 附带 KernelSU/Magisk 模块 zip（可选），App 单独也能用 |
+| **模块化** | 附带 KernelSU/Magisk 模块 zip（可选），App 单独也能用；模块自带 WebUI（概览/节点/订阅/日志），不装 App 也能操作 |
+| **快捷磁贴** | 下拉通知栏「Mihomo」磁贴一键启停代理，不用打开 App |
+| **日志面板** | 级别筛选（全部/警告/错误）、关键字搜索、一键复制、错误标红、滚到底自动跟随 |
+
+## 界面
+
+<p align="center">
+  <img src="docs/img/home.png" width="300" alt="首页：一屏状态 / 流量 / 节点 / 模式 / 快捷操作">
+  <img src="docs/img/logs.png" width="300" alt="日志：级别筛选 / 搜索 / 复制">
+  <img src="docs/img/platform-test.png" width="300" alt="平台检测">
+  <img src="docs/img/webui.png" width="300" alt="模块 WebUI（不装 App 也能用）">
+</p>
+
+> 节点名称已打码，截图里不包含订阅地址。
 
 ## 2. 目录
 
@@ -203,3 +221,33 @@ WebUI 的独立运行时靠这几个文件：
    - WebUI：概览 → 更新内核（调用 `update_core.sh`）；
    - 终端：`su -c 'sh /data/adb/mihomo_tproxy/update_core.sh'`。
    三者都走 GitHub release（直连 API 常被限流，脚本内置 `gh-proxy.com` 镜像），下载 .gz → 解压 → 替换 → 重启。
+
+## 12. 在 GitHub 上构建与发布（Actions）
+
+APK **不是手工上传的**，由 GitHub 内置的 Actions（CI/CD，不需要装任何插件）在云端编译。
+工作流都在 `.github/workflows/`：
+
+| 文件 | 触发 | 做什么 |
+|---|---|---|
+| `ci.yml` | push 到 main / 任意 PR / 手动 | 拉 mihomo+geo → 跑单测 → `assembleDebug` → 上传 APK 为 Actions artifact |
+| `release.yml` | 推送 `v*` tag / 手动 | 同上编译 → 打模块 zip → 生成 `update.json` → 创建 Release 并挂上 APK / 模块 / update.json |
+
+用到的 action：
+
+- `actions/checkout@v4`：拉代码
+- `actions/setup-java@v4`：JDK 21
+- `android-actions/setup-android@v3`：Android SDK（platform 36 / build-tools 36.1）
+- `gradle/actions/setup-gradle@v4`：Gradle 缓存，二次构建快很多
+- `actions/upload-artifact@v4`：把 APK 挂到 Actions 页面（免登录下载需 public 仓库）
+- `softprops/action-gh-release@v2`：把产物挂到 Release
+
+发版流程：
+
+```bash
+git tag v1.1.0 && git push origin v1.1.0
+```
+
+几分钟后 `Releases` 里就有 `MihomoTProxy-v1.1.0.apk`、`MihomoTProxy-Module-v1.1.0.zip` 和 `update.json`；
+模块管理器读取 `module.prop` 里的 `updateJson` 就能提示更新。
+
+> 为什么仓库里没有 APK：产物体积大且每次构建都变，放 Release/Artifacts 更合适，也方便校验（每个 Release 带 sha256 说明）。
