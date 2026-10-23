@@ -4,6 +4,7 @@ import com.mihomo.tproxy.core.ConfigComposer
 import com.mihomo.tproxy.core.ShareLinks
 import com.mihomo.tproxy.model.ProxySettings
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -93,20 +94,25 @@ rules:
     }
 
     @Test
-    fun perAppRulesAreInjected() {
-        val s = settings.copy(perAppEnabled = true, perAppPackages = setOf("com.tencent.mm", "com.eg.android.AlipayGphone"))
+    fun perAppBlacklistUsesExcludeUid() {
+        // per-app is enforced by the tun device (uid lists), never by rewriting rules
+        val s = settings.copy(perAppEnabled = true, perAppWhitelist = false, perAppUids = setOf(10086, 10087))
         val out = ConfigComposer.compose(clashSub, s)
-        assertTrue(out.contains("PROCESS-NAME,com.tencent.mm,DIRECT"))
-        assertTrue(out.contains("PROCESS-NAME,com.eg.android.AlipayGphone,DIRECT"))
+        assertTrue(out.contains("exclude-uid:"))
+        assertTrue(out.contains("    - 10086"))
+        assertTrue(out.contains("    - 10087"))
+        assertFalse(out.contains("PROCESS-NAME"))
+        assertTrue(out.contains("MATCH,PROXY"))
         dump("04-perapp.yaml", out)
     }
 
     @Test
-    fun whitelistModeSwitchesDefault() {
-        val s = settings.copy(perAppEnabled = true, perAppWhitelist = true, perAppPackages = setOf("com.tencent.mm"))
+    fun perAppWhitelistUsesIncludeUid() {
+        val s = settings.copy(perAppEnabled = true, perAppWhitelist = true, perAppUids = setOf(10086))
         val out = ConfigComposer.compose(clashSub, s)
-        assertTrue(out.contains("PROCESS-NAME,com.tencent.mm," + ConfigComposer.TARGET))
-        assertTrue(out.contains("MATCH,DIRECT"))
+        assertTrue(out.contains("include-uid:"))
+        assertTrue(out.contains("    - 10086"))
+        assertFalse(out.contains("MATCH,DIRECT"))
         dump("05-whitelist.yaml", out)
     }
 

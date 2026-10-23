@@ -44,9 +44,12 @@ jobs:
           import json, os, sys
           tag = sys.argv[1]
           repo = os.environ["GITHUB_REPOSITORY"]
+          import re
+          prop = open("module/module.prop").read()
+          vc = int(re.search(r"versionCode=(\d+)", prop).group(1))
           data = {
               "version": tag,
-              "versionCode": 1,
+              "versionCode": vc,
               "zipUrl": f"https://github.com/{repo}/releases/download/{tag}/MihomoTProxy-Module-{tag}.zip",
               "changelog": f"https://raw.githubusercontent.com/{repo}/main/CHANGELOG.md",
           }
