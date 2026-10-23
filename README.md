@@ -50,17 +50,11 @@
 
 ```
 透明代理/
-├─ Android/                 # App 源码（Kotlin + Jetpack Compose，Gradle 8.13 / AGP 8.13 / Kotlin 2.2）
-│  └─ app/src/main/
-│     ├─ assets/            # mihomo.gz（内核）、geoip.metadb、geosite.dat、ctl.sh
-│     └─ java/com/mihomo/tproxy/
-│        ├─ core/           # RootShell / CoreManager / ConfigComposer / Yaml / ShareLinks / MihomoApi
-│        ├─ data/           # Store（配置持久化） / SubFetcher（订阅下载）
-│        ├─ ui/             # Compose 界面（首页/节点/订阅/设置/分应用/日志）
-│        └─ AppViewModel.kt # 全部状态与动作
-├─ module/                  # KernelSU / Magisk 模块（module.prop、customize.sh、service.sh、bin/mihomo）
-├─ dist/                    # 产物：APK + 模块 zip
-└─ README.md
+├─ Android/       App 源码（Kotlin + Jetpack Compose）
+├─ module/        KernelSU / Magisk 模块（含 WebUI：webroot/index.html）
+├─ scripts/       fetch-deps.sh（拉内核 + geo）、set-repo.sh（更新通道）
+├─ docs/          发布指南、维护指南、测试记录
+└─ .github/       CI、Release、Issue 模板、Dependabot
 ```
 
 ## 3. 安装
@@ -124,12 +118,11 @@ App 进程（普通 uid） ──su──▶ root 守护进程
 ## 6. 构建
 
 ```bash
-# 依赖：JDK 21、Android SDK（compileSdk 36、build-tools 36.1）、Gradle 8.13
-cd Android
-gradle assembleDebug        # 或使用 ./gradlew
+bash scripts/fetch-deps.sh          # 下载 mihomo 内核 + geo 数据库
+cd Android && ./gradlew assembleDebug
 ```
 
-> 仓库里没有放 `gradlew`，用本机 Gradle 8.13 即可；`local.properties` 里的 `sdk.dir` 需改成你自己的 SDK 路径。
+依赖 JDK 21、Android SDK（compileSdk 36 / build-tools 36.1），`local.properties` 的 `sdk.dir` 指向本机 SDK。
 
 ## 7. 常见问题
 
@@ -221,33 +214,3 @@ WebUI 的独立运行时靠这几个文件：
    - WebUI：概览 → 更新内核（调用 `update_core.sh`）；
    - 终端：`su -c 'sh /data/adb/mihomo_tproxy/update_core.sh'`。
    三者都走 GitHub release（直连 API 常被限流，脚本内置 `gh-proxy.com` 镜像），下载 .gz → 解压 → 替换 → 重启。
-
-## 12. 在 GitHub 上构建与发布（Actions）
-
-APK **不是手工上传的**，由 GitHub 内置的 Actions（CI/CD，不需要装任何插件）在云端编译。
-工作流都在 `.github/workflows/`：
-
-| 文件 | 触发 | 做什么 |
-|---|---|---|
-| `ci.yml` | push 到 main / 任意 PR / 手动 | 拉 mihomo+geo → 跑单测 → `assembleDebug` → 上传 APK 为 Actions artifact |
-| `release.yml` | 推送 `v*` tag / 手动 | 同上编译 → 打模块 zip → 生成 `update.json` → 创建 Release 并挂上 APK / 模块 / update.json |
-
-用到的 action：
-
-- `actions/checkout@v4`：拉代码
-- `actions/setup-java@v4`：JDK 21
-- `android-actions/setup-android@v3`：Android SDK（platform 36 / build-tools 36.1）
-- `gradle/actions/setup-gradle@v4`：Gradle 缓存，二次构建快很多
-- `actions/upload-artifact@v4`：把 APK 挂到 Actions 页面（免登录下载需 public 仓库）
-- `softprops/action-gh-release@v2`：把产物挂到 Release
-
-发版流程：
-
-```bash
-git tag v1.1.0 && git push origin v1.1.0
-```
-
-几分钟后 `Releases` 里就有 `MihomoTProxy-v1.1.0.apk`、`MihomoTProxy-Module-v1.1.0.zip` 和 `update.json`；
-模块管理器读取 `module.prop` 里的 `updateJson` 就能提示更新。
-
-> 为什么仓库里没有 APK：产物体积大且每次构建都变，放 Release/Artifacts 更合适，也方便校验（每个 Release 带 sha256 说明）。
