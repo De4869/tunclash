@@ -24,6 +24,59 @@ object CoreUpdater {
         return c
     }
 
+    data class AppRelease(val tag: String, val notes: String, val apkUrl: String)
+
+    /** Reads the tag from the /releases/latest redirect (works even when the API is rate-limited). */
+    fun tagFromRedirect(repo: String, useProxy: Boolean): String? {
+        for (base in listOf("https://github.com/", "https://gh-proxy.com/https://github.com/")) {
+            val url = base + repo + "/releases/latest"
+            val loc = runCatching {
+                val c = open(url, useProxy, 12000)
+                try {
+                    c.instanceFollowRedirects = false
+                    c.responseCode
+                    c.getHeaderField("Location")
+                } finally { c.disconnect() }
+            }.getOrNull() ?: continue
+            if (!loc.isNullOrBlank()) {
+                val tag = loc.substringAfterLast("/")
+                if (tag.startsWith("v")) return tag
+            }
+        }
+        return null
+    }
+
+    /** Latest release of an arbitrary repo, including notes and the APK asset link. */
+    fun latestRelease(repo: String, useProxy: Boolean): AppRelease? {
+        val apis = listOf(
+            "https://api.github.com/repos/" + repo + "/releases/latest",
+            "https://gh-proxy.com/https://api.github.com/repos/" + repo + "/releases/latest"
+        )
+        for (api in apis) {
+            val body = runCatching {
+                val c = open(api, useProxy, 12000)
+                try {
+                    if (c.responseCode !in 200..299) null else c.inputStream.bufferedReader().readText()
+                } finally { c.disconnect() }
+            }.getOrNull() ?: continue
+            val j = runCatching { JSONObject(body) }.getOrNull() ?: continue
+            val tag = j.optString("tag_name")
+            if (tag.isBlank()) continue
+            val notes = j.optString("body", "")
+            var apk = ""
+            val assets = j.optJSONArray("assets")
+            if (assets != null) {
+                for (i in 0 until assets.length()) {
+                    val a = assets.optJSONObject(i) ?: continue
+                    val name = a.optString("name")
+                    if (name.endsWith(".apk", true)) { apk = a.optString("browser_download_url"); break }
+                }
+            }
+            return AppRelease(tag, notes, apk)
+        }
+        return null
+    }
+
     /** Latest release tag of an arbitrary repo (used by the app's own update check). */
     fun latestTag(repo: String, useProxy: Boolean): String? {
         val apis = listOf(

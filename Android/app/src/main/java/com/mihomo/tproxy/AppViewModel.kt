@@ -46,6 +46,12 @@ data class UiState(
     val busy: Boolean = false,
     val version: String = "",
     val platforms: List<PlatformResult> = emptyList(),
+    val appUpdateChecked: Boolean = false,
+    val appUpdateLatest: String = "",     // 已是最新的版本号
+    val appUpdateVersion: String = "",    // 发现的新版本
+    val appUpdateNotes: String = "",
+    val appUpdateUrl: String = "",
+    val appUpdateError: String = "",
     val updateVersion: String = "",
     val updateUrl: String = "",
     val updating: Boolean = false,
@@ -431,16 +437,64 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Compare the installed app version with the latest GitHub release. */
     fun checkAppUpdate() {
+        toast("正在检查更新…")
         viewModelScope.launch(Dispatchers.IO) {
-            val tag = CoreUpdater.latestTag("De4869/tunclash", core.status())
-            if (tag.isNullOrBlank()) { toast("检查更新失败，请检查网络后重试"); return@launch }
-            val latest = tag.trim().removePrefix("v")
-            val current = com.mihomo.tproxy.BuildConfig.VERSION_NAME
-            toast(
-                if (latest == current) "已是最新版本 v" + current
-                else "发现新版本 " + tag + "（当前 v" + current + "），见 GitHub Releases"
-            )
+            _state.update { it.copy(busy = true) }
+            try {
+                val current = com.mihomo.tproxy.BuildConfig.VERSION_NAME
+                // API first (gives notes + apk link), then plain redirect as a fallback
+                val rel = CoreUpdater.latestRelease("De4869/tunclash", true)
+                    ?: CoreUpdater.latestRelease("De4869/tunclash", false)
+                if (rel != null) {
+                    val latest = rel.tag.trim().removePrefix("v")
+                    if (latest == current) {
+                        _state.update { it.copy(appUpdateChecked = true, appUpdateLatest = current, appUpdateVersion = "", appUpdateError = "") }
+                        toast("已是最新版本 v" + current)
+                    } else {
+                        _state.update {
+                            it.copy(
+                                appUpdateChecked = true,
+                                appUpdateLatest = "",
+                                appUpdateVersion = latest,
+                                appUpdateNotes = rel.notes,
+                                appUpdateUrl = rel.apkUrl,
+                                appUpdateError = ""
+                            )
+                        }
+                    }
+                    return@launch
+                }
+                val tag = CoreUpdater.tagFromRedirect("De4869/tunclash", true)
+                    ?: CoreUpdater.tagFromRedirect("De4869/tunclash", false)
+                if (tag != null) {
+                    val latest = tag.trim().removePrefix("v")
+                    if (latest == current) {
+                        _state.update { it.copy(appUpdateChecked = true, appUpdateLatest = current, appUpdateVersion = "", appUpdateError = "") }
+                        toast("已是最新版本 v" + current)
+                    } else {
+                        _state.update {
+                            it.copy(
+                                appUpdateChecked = true,
+                                appUpdateLatest = "",
+                                appUpdateVersion = latest,
+                                appUpdateNotes = "",
+                                appUpdateUrl = "",
+                                appUpdateError = ""
+                            )
+                        }
+                    }
+                } else {
+                    _state.update { it.copy(appUpdateChecked = true, appUpdateError = "检查失败，请检查网络") }
+                    toast("检查更新失败，请检查网络后重试")
+                }
+            } finally {
+                _state.update { it.copy(busy = false) }
+            }
         }
+    }
+
+    fun dismissAppUpdate() {
+        _state.update { it.copy(appUpdateVersion = "") }
     }
 
     /** Manually refresh every online ad-rule source, and remember how many entries each one has. */

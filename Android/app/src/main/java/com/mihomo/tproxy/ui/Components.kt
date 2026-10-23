@@ -92,6 +92,7 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     corner: Int = 22,
     highlight: Boolean = false,
+    padding: Int = 16,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -110,7 +111,7 @@ fun GlassCard(
                 color = Palette.cardBorder,
                 shape = RoundedCornerShape(corner.dp)
             )
-            .padding(16.dp)
+            .padding(padding.dp)
     ) { content() }
 }
 

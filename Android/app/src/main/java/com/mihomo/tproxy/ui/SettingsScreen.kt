@@ -1,6 +1,7 @@
 package com.mihomo.tproxy.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,7 +47,12 @@ fun SettingsScreen(
 ) {
     val s = state.settings
     var dialog by remember { mutableStateOf<String?>(null) }
+    var showAppUpdate by remember { mutableStateOf(false) }
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+
+    androidx.compose.runtime.LaunchedEffect(state.appUpdateVersion) {
+        if (state.appUpdateVersion.isNotBlank()) showAppUpdate = true
+    }
 
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -171,18 +178,95 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
         SectionLabel("关于")
-        GlassCard(Modifier.fillMaxWidth()) {
+        GlassCard(Modifier.fillMaxWidth(), padding = 14) {
             Column {
-                SettingRow("TunClash", "v" + com.mihomo.tproxy.BuildConfig.VERSION_NAME, onClick = {})
+                SettingRow("TunClash", "v" + com.mihomo.tproxy.BuildConfig.VERSION_NAME, onClick = {}, vertical = 10)
                 Divider()
                 SettingRow("项目地址", "github.com/De4869/tunclash", onClick = {
                     runCatching { uriHandler.openUri("https://github.com/De4869/tunclash") }
-                })
+                }, vertical = 10)
                 Divider()
-                SettingRow("检查更新", "检查 App 是否有新版本", onClick = { vm.checkAppUpdate() })
+                SettingRow(
+                    "检查更新",
+                    when {
+                        state.appUpdateVersion.isNotBlank() -> "发现新版本 v" + state.appUpdateVersion
+                        state.appUpdateLatest.isNotBlank() -> "已是最新版本 v" + state.appUpdateLatest
+                        state.appUpdateError.isNotBlank() -> state.appUpdateError
+                        else -> "检查 App 是否有新版本"
+                    },
+                    onClick = {
+                        if (state.appUpdateVersion.isNotBlank()) showAppUpdate = true else vm.checkAppUpdate()
+                    },
+                    vertical = 8
+                )
             }
         }
+
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+                .background(Palette.primary.copy(alpha = 0.14f))
+                .border(1.dp, Palette.primary.copy(alpha = 0.35f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+                .clickable { vm.checkAppUpdate() }
+                .padding(vertical = 13.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                when {
+                    state.appUpdateVersion.isNotBlank() -> "查看新版本 v" + state.appUpdateVersion
+                    state.appUpdateLatest.isNotBlank() -> "已是最新版本 v" + state.appUpdateLatest
+                    else -> "检查更新"
+                },
+                color = Palette.primary,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
         Spacer(Modifier.height(110.dp))
+    }
+
+    if (showAppUpdate && state.appUpdateVersion.isNotBlank()) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showAppUpdate = false; vm.dismissAppUpdate() },
+            containerColor = Palette.bg2,
+            title = {
+                Text("发现新版本 v" + state.appUpdateVersion, color = Palette.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            },
+            text = {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    Text(
+                        if (state.appUpdateNotes.isBlank()) "暂无更新说明" else state.appUpdateNotes,
+                        color = Palette.textDim,
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Text(
+                    "下载更新",
+                    color = Palette.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickableNoRipple {
+                        runCatching {
+                            uriHandler.openUri(
+                                state.appUpdateUrl.ifBlank { "https://github.com/De4869/tunclash/releases/latest" }
+                            )
+                        }
+                        showAppUpdate = false
+                        vm.dismissAppUpdate()
+                    }.padding(8.dp)
+                )
+            },
+            dismissButton = {
+                Text("稍后", color = Palette.textDim, modifier = Modifier.clickableNoRipple {
+                    showAppUpdate = false
+                    vm.dismissAppUpdate()
+                }.padding(8.dp))
+            }
+        )
     }
 
     if (dialog == "mergefilter") {
@@ -275,13 +359,19 @@ fun SettingRow(
     title: String,
     subtitle: String? = null,
     onClick: (() -> Unit)? = null,
+    vertical: Int = 12,
     trailing: @Composable (() -> Unit)? = null
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickableNoRipple { onClick() } else Modifier)
-            .padding(vertical = 12.dp),
+            .then(
+                if (onClick != null) Modifier
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                    .clickable { onClick() }
+                else Modifier
+            )
+            .padding(vertical = vertical.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {

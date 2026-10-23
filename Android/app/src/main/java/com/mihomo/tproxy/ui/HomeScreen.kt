@@ -79,7 +79,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 3.sp
                 )
-                Text("透明代理 · TPROXY", color = Palette.textFaint, fontSize = 10.5.sp, letterSpacing = 1.2.sp)
+
             }
             StatusPill(state)
             Spacer(Modifier.width(8.dp))
