@@ -268,14 +268,16 @@ function render(){
   if (state.tab === "logs") return renderLogs(v);
 }
 
-function renderHome(v){
+async function renderHome(v){
+  const raw = await sh("cat " + DIR + "/subs.list 2>/dev/null");
+  const subs = raw.split("\n").filter(Boolean).length;
   const cur = state.current || "未选择";
   v.innerHTML = `
     <div class="card">
       <div class="row"><div class="grow">
         <div style="font-size:10.5px;color:var(--faint)">当前节点</div>
         <div class="name" style="font-size:15px;margin-top:4px;font-weight:600">${escapeHtml(cur)}</div>
-        <div class="sub">${state.groups.length} 个策略组 · ${Object.keys(state.nodes).length} 个节点</div>
+        <div class="sub">${state.groups.length} 个策略组 · ${Object.keys(state.nodes).length} 个节点 · ${subs} 个订阅</div>
       </div><div class="badge">${state.running ? "TUN" : "OFF"}</div></div>
     </div>
     <div class="card">
@@ -376,24 +378,35 @@ async function restart(){
 
 async function renderSubs(v){
   const raw = await sh("cat " + DIR + "/subs.list 2>/dev/null");
-  const rows = raw.split("\n").filter(Boolean).map(l=>{ const p=l.split("|"); return {name:p[0]||"", url:p[1]||""}; });
-  v.innerHTML = `
-    <div class="card">
-      <div style="font-size:11px;color:var(--faint);margin-bottom:8px">添加 Clash 订阅（下载后作为 provider 使用）</div>
-      <input id="subUrl" placeholder="https://...">
-      <div class="row" style="margin-top:8px">
-        <input id="subName" placeholder="备注名（可选）" style="flex:1">
-        <button class="btn" onclick="addSub()">添加</button>
-      </div>
-    </div>
-    <div class="list">${rows.length?rows.map((r,i)=>`
-      <div class="item"><div class="grow"><div class="name">${escapeHtml(r.name)}</div>
-      <div class="sub">${escapeHtml(r.url)}</div></div>
-      <button class="btn ghost" onclick="delSub(${i})">删除</button></div>`).join(""):'<div class="empty">还没有订阅</div>'}</div>
-    <div class="card"><div class="row" style="justify-content:space-between">
-      <button class="btn ghost" onclick="updateSubs()">更新全部</button>
-      <button class="btn ghost" onclick="refresh().then(render)">刷新</button>
-    </div></div>`;
+  const rows = raw.split("\n").filter(Boolean).map(l => {
+    const p = l.split("|");
+    return { name: p[0] || "", url: p[1] || "", count: 0 };
+  });
+  for (let i = 0; i < rows.length; i++) {
+    const c = await sh("grep -c 'name:' " + DIR + "/data/sub" + i + ".yaml 2>/dev/null");
+    rows[i].count = parseInt(c || "0", 10) || 0;
+  }
+  const totalNodes = rows.reduce((a, r) => a + (r.count || 0), 0);
+  const listHtml = rows.length
+    ? rows.map((r, i) => '<div class="item"><div class="grow"><div class="name">' + escapeHtml(r.name) +
+        '</div><div class="sub">' + escapeHtml(r.url) + '</div></div><div class="badge">' + r.count + ' 节点</div>' +
+        '<button class="btn ghost" onclick="delSub(' + i + ')">删除</button></div>').join("")
+    : '<div class="empty">还没有订阅</div>';
+
+  v.innerHTML =
+    '<div class="card"><div class="row" style="justify-content:space-between">' +
+      '<div><div style="font-size:10.5px;color:var(--faint)">订阅概览</div>' +
+      '<div style="font-size:15px;font-weight:600;margin-top:4px">' + rows.length + ' 个订阅 · ' + totalNodes + ' 个节点</div></div>' +
+      '<div class="badge">provider</div></div></div>' +
+    '<div class="card">' +
+      '<div style="font-size:11px;color:var(--faint);margin-bottom:8px">添加 Clash 订阅（下载后作为 provider 使用）</div>' +
+      '<input id="subUrl" placeholder="https://...">' +
+      '<div class="row" style="margin-top:8px"><input id="subName" placeholder="备注名（可选）" style="flex:1">' +
+      '<button class="btn" onclick="addSub()">添加</button></div></div>' +
+    '<div class="list">' + listHtml + '</div>' +
+    '<div class="card"><div class="row" style="justify-content:space-between">' +
+      '<button class="btn ghost" onclick="updateSubs()">更新全部</button>' +
+      '<button class="btn ghost" onclick="refresh().then(render)">刷新</button></div></div>';
 }
 
 async function addSub(){
