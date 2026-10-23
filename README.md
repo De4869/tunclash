@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 给 **已 Root 的安卓手机**（KernelSU / Magisk / APatch / SukiSU）用的 mihomo 透明代理方案：
-**App 图形界面 + mihomo 1.19.14 内核 + Root 级 TUN 全局接管**，不占用系统 VPN 入口，状态栏不会出现 VPN 图标，也不会被"检测 VPN"的 App 识别。
+**App 图形界面 + mihomo 内核（构建时拉取最新 release）+ Root 级 TUN 全局接管**，不占用系统 VPN 入口，状态栏不会出现 VPN 图标，也不会被"检测 VPN"的 App 识别。
 
 > 参考并改进了 GitHub 上的 [MagicNet](https://github.com/LIghtJUNction/MagicNet) 与 [NetProxy-Magisk](https://github.com/Fanju6/NetProxy-Magisk)：
 > 它们的思路很好（Root 级 TUN、无 VPN 槽位），但都是 sing-box 内核 + 命令行/配置文件操作，配置繁琐、节点要自己拼、出问题只能看日志。
@@ -18,7 +18,7 @@
 
 | 能力 | 说明 |
 |---|---|
-| **mihomo 内核** | 内置 mihomo v1.19.14（arm64），支持 vmess / vless / trojan / ss / hysteria2 / tuic 等全部主流协议 |
+| **mihomo 内核** | arm64 内核随构建拉取最新 release（默认 v1.19.32），支持 vmess / vless / trojan / ss / hysteria2 / tuic 等全部主流协议，可在 App 内一键更新 |
 | **无 VPN 槽位** | 直接用 `/dev/net/tun` + 策略路由接管全局流量，不创建 VpnService，不显示 VPN 图标 |
 | **订阅导入** | 支持 Clash 订阅链接（自动识别 YAML / base64 分享链接）、多行粘贴节点链接、本地 YAML |
 | **节点整合** | 多个订阅一键合并，按 `类型+服务器+端口+凭据` 去重，重名自动改名，自动按地区分组（港/台/日/新/美…） |
@@ -53,7 +53,7 @@
 ├─ Android/       App 源码（Kotlin + Jetpack Compose）
 ├─ module/        KernelSU / Magisk 模块（含 WebUI：webroot/index.html）
 ├─ scripts/       fetch-deps.sh（拉内核 + geo）、set-repo.sh（更新通道）
-├─ docs/          发布指南、维护指南、测试记录
+├─ docs/          测试记录 + 演示截图
 └─ .github/       CI、Release、Issue 模板、Dependabot
 ```
 
@@ -146,7 +146,7 @@ App 内「设置 → 停止内核」，然后 `adb shell su -c "rm -rf /data/adb
 
 ## 8. 真机验证
 
-见 [docs/测试记录.md](docs/测试记录.md)。核心链路（TUN 接管 / DNS 劫持 / 热重载 / 模式切换 / 配置校验 / 平台检测）均已在小米 15（Android 17 + SukiSU）上跑通，截图在 `docs/screenshots/`。
+见 [docs/测试记录.md](docs/测试记录.md)。核心链路（TUN 接管 / DNS 劫持 / 热重载 / 模式切换 / 配置校验 / 平台检测）均已在小米 15（Android 17 + SukiSU）上跑通，截图在 `docs/img/`。
 
 ## 9. 已知限制
 
