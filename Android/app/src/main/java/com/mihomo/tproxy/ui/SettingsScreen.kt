@@ -45,6 +45,7 @@ fun SettingsScreen(
 ) {
     val s = state.settings
     var dialog by remember { mutableStateOf<String?>(null) }
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
 
     Column(
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -174,9 +175,11 @@ fun SettingsScreen(
             Column {
                 SettingRow("TunClash", "v" + com.mihomo.tproxy.BuildConfig.VERSION_NAME, onClick = {})
                 Divider()
-                SettingRow("内核版本", state.version.ifBlank { "—" }, onClick = {})
+                SettingRow("项目地址", "github.com/De4869/tunclash", onClick = {
+                    runCatching { uriHandler.openUri("https://github.com/De4869/tunclash") }
+                })
                 Divider()
-                SettingRow("运行方式", if (state.rootOk) "Root TUN · 无 VPN 图标" else "需要 Root 权限", onClick = {})
+                SettingRow("检查更新", "检查 App 是否有新版本", onClick = { vm.checkAppUpdate() })
             }
         }
         Spacer(Modifier.height(110.dp))

@@ -429,6 +429,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Compare the installed app version with the latest GitHub release. */
+    fun checkAppUpdate() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val tag = CoreUpdater.latestTag("De4869/tunclash", core.status())
+            if (tag.isNullOrBlank()) { toast("检查更新失败，请检查网络后重试"); return@launch }
+            val latest = tag.trim().removePrefix("v")
+            val current = com.mihomo.tproxy.BuildConfig.VERSION_NAME
+            toast(
+                if (latest == current) "已是最新版本 v" + current
+                else "发现新版本 " + tag + "（当前 v" + current + "），见 GitHub Releases"
+            )
+        }
+    }
+
     /** Manually refresh every online ad-rule source, and remember how many entries each one has. */
     fun updateAdRules() {
         val s0 = store.settings

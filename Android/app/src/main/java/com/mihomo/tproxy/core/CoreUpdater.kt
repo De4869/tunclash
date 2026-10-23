@@ -24,6 +24,25 @@ object CoreUpdater {
         return c
     }
 
+    /** Latest release tag of an arbitrary repo (used by the app's own update check). */
+    fun latestTag(repo: String, useProxy: Boolean): String? {
+        val apis = listOf(
+            "https://api.github.com/repos/" + repo + "/releases/latest",
+            "https://gh-proxy.com/https://api.github.com/repos/" + repo + "/releases/latest"
+        )
+        for (api in apis) {
+            val body = runCatching {
+                val c = open(api, useProxy, 12000)
+                try {
+                    if (c.responseCode !in 200..299) null else c.inputStream.bufferedReader().readText()
+                } finally { c.disconnect() }
+            }.getOrNull() ?: continue
+            val tag = runCatching { JSONObject(body).optString("tag_name") }.getOrNull()
+            if (!tag.isNullOrBlank()) return tag
+        }
+        return null
+    }
+
     fun check(useProxy: Boolean): Release? {
         val apis = listOf(
             "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest",
