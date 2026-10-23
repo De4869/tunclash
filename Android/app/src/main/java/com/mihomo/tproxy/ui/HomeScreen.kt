@@ -225,13 +225,10 @@ fun HomeScreen(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                IconChip(Icons.Rounded.Speed, "测速", enabled = state.coreRunning) { vm.speedTestAll() }
+                IconChip(Icons.Rounded.Bolt, "最优", enabled = state.coreRunning) { vm.speedTestAll() }
             }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 IconChip(Icons.Rounded.Public, "检测", enabled = state.coreRunning) { onOpenTest() }
-            }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                IconChip(Icons.Rounded.Bolt, "最优", enabled = state.coreRunning) { vm.autoSelect() }
             }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 IconChip(Icons.Rounded.Refresh, "重载", enabled = state.rootOk) { vm.applySettings(state.settings) }
