@@ -72,7 +72,7 @@ fun NodesScreen(state: UiState, vm: AppViewModel) {
             Row(
                 Modifier
                     .clip(CircleShape)
-                    .background(Brush.horizontalGradient(listOf(Palette.primary, Color(0xFF3F6FE8))))
+                    .background(Palette.primary)
                     .clickable(enabled = state.coreRunning && !state.busy) { vm.speedTestAll() }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically

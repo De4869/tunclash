@@ -276,18 +276,19 @@ fun ModeChip(label: String, selected: Boolean, modifier: Modifier = Modifier, on
     Box(
         modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(
-                if (selected) Brush.horizontalGradient(listOf(Palette.primary, Color(0xFF3F6FE8)))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.05f), Color.White.copy(alpha = 0.03f)))
+            .background(if (selected) Palette.primary.copy(alpha = 0.16f) else Palette.card)
+            .border(
+                1.dp,
+                if (selected) Palette.primary.copy(alpha = 0.45f) else Palette.cardBorder,
+                RoundedCornerShape(14.dp)
             )
-            .border(1.dp, if (selected) Color.Transparent else Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
             .clickable { onClick() }
             .padding(vertical = 11.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             label,
-            color = if (selected) Color.White else Palette.textDim,
+            color = if (selected) Palette.primary else Palette.textDim,
             fontSize = 13.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
         )

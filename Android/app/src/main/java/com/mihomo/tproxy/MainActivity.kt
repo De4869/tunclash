@@ -38,7 +38,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -195,54 +206,96 @@ fun AppRoot(vm: AppViewModel, initialScreen: String = "") {
 
 @Composable
 fun BottomBar(tab: Int, onSelect: (Int) -> Unit) {
-    Row(
+    Box(
         Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 18.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Palette.navBg)
-            .border(1.dp, Palette.cardBorder, RoundedCornerShape(24.dp))
-            .padding(horizontal = 8.dp, vertical = 7.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        TabItem(0, tab, "首页", Icons.Rounded.Home) { onSelect(it) }
-        TabItem(1, tab, "节点", Icons.Rounded.Dns) { onSelect(it) }
-        TabItem(2, tab, "订阅", Icons.Rounded.CloudDownload) { onSelect(it) }
-        TabItem(3, tab, "设置", Icons.Rounded.Settings) { onSelect(it) }
+        BoxWithConstraints(
+            Modifier
+                .fillMaxWidth()
+                .height(62.dp)
+                .shadow(
+                    elevation = 18.dp,
+                    shape = RoundedCornerShape(26.dp),
+                    clip = false,
+                    ambientColor = Color.Black.copy(alpha = 0.30f),
+                    spotColor = Color.Black.copy(alpha = 0.40f)
+                )
+                .clip(RoundedCornerShape(26.dp))
+                .background(Brush.verticalGradient(listOf(Palette.glassTop, Palette.glassBottom)))
+                .border(1.dp, Palette.glassBorder, RoundedCornerShape(26.dp))
+        ) {
+            val slot = maxWidth / 4
+            val x by animateDpAsState(
+                targetValue = slot * tab,
+                animationSpec = spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow),
+                label = "tabPill"
+            )
+            Box(
+                Modifier
+                    .offset(x = x)
+                    .width(slot)
+                    .fillMaxHeight()
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Palette.pillBg)
+                    .border(1.dp, Palette.primary.copy(alpha = 0.26f), RoundedCornerShape(20.dp))
+            )
+            Row(Modifier.fillMaxSize()) {
+                TabItem(0, tab, "首页", Icons.Rounded.Home, Modifier.weight(1f)) { onSelect(0) }
+                TabItem(1, tab, "节点", Icons.Rounded.Dns, Modifier.weight(1f)) { onSelect(1) }
+                TabItem(2, tab, "订阅", Icons.Rounded.CloudDownload, Modifier.weight(1f)) { onSelect(2) }
+                TabItem(3, tab, "设置", Icons.Rounded.Settings, Modifier.weight(1f)) { onSelect(3) }
+            }
+        }
     }
 }
 
 @Composable
-private fun RowScope.TabItem(
+private fun TabItem(
     index: Int,
     current: Int,
     label: String,
     icon: ImageVector,
-    onSelect: (Int) -> Unit
+    modifier: Modifier = Modifier,
+    onSelect: () -> Unit
 ) {
     val selected = index == current
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                if (selected) Brush.horizontalGradient(listOf(Palette.primary.copy(alpha = 0.9f), Color(0xFF3F6FE8)))
-                else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-            )
-            .clickable { onSelect(index) }
-            .padding(horizontal = if (selected) 16.dp else 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.07f else 1f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium),
+        label = "tabScale"
+    )
+    val labelAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0.55f,
+        animationSpec = tween(180),
+        label = "tabAlpha"
+    )
+    Column(
+        modifier.clickable { onSelect() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Icon(
             icon, null,
-            tint = if (selected) Color.White else Palette.textFaint,
-            modifier = Modifier.size(20.dp)
+            tint = if (selected) Palette.primary else Palette.textFaint,
+            modifier = Modifier
+                .size(21.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
         )
-        if (selected) {
-            Spacer(Modifier.width(6.dp))
-            Text(label, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        }
+        Spacer(Modifier.height(3.dp))
+        Text(
+            label,
+            color = if (selected) Palette.primary else Palette.textFaint,
+            fontSize = 10.5.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            modifier = Modifier.graphicsLayer { alpha = labelAlpha }
+        )
     }
 }
 

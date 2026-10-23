@@ -80,7 +80,7 @@ fun TestScreen(state: UiState, vm: AppViewModel, onBack: () -> Unit) {
                 Row(
                     Modifier
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (state.coreRunning) Brush.horizontalGradient(listOf(Palette.primary, Color(0xFF3F6FE8))) else Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.06f))))
+                        .background(if (state.coreRunning) Palette.primary else Palette.card)
                         .clickable(enabled = state.coreRunning) { vm.testPlatforms() }
                         .padding(horizontal = 14.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically

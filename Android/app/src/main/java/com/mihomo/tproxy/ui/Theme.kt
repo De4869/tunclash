@@ -44,6 +44,10 @@ object Palette {
     var orbOffTop = Color(0xFF232A3A); private set
     var orbOffBottom = Color(0xFF161B28); private set
     var track = Color(0xFF232A3A); private set
+    var glassTop = Color(0xB3131A28); private set
+    var glassBottom = Color(0x99101722); private set
+    var glassBorder = Color(0x1FFFFFFF); private set
+    var pillBg = Color(0x265B8CFF); private set
 
     init { dark() }
 
@@ -61,6 +65,8 @@ object Palette {
         cardTop = Color(0x1AFFFFFF); cardBottom = Color(0x0AFFFFFF)
         navBg = Color(0xD90B1020); sheet = Color(0xFF1A2136)
         orbOffTop = Color(0xFF232A3A); orbOffBottom = Color(0xFF161B28); track = Color(0xFF232A3A)
+        glassTop = Color(0xB3131A28); glassBottom = Color(0x99101722)
+        glassBorder = Color(0x1FFFFFFF); pillBg = Color(0x265B8CFF)
     }
 
     private fun light() {
@@ -72,6 +78,8 @@ object Palette {
         cardTop = Color(0xFFFFFFFF); cardBottom = Color(0xFFF8FAFE)
         navBg = Color(0xF2FFFFFF); sheet = Color(0xFFFFFFFF)
         orbOffTop = Color(0xFFE3E9F4); orbOffBottom = Color(0xFFD2DAE8); track = Color(0xFFD7DEEA)
+        glassTop = Color(0xF2FFFFFF); glassBottom = Color(0xE6F4F7FC)
+        glassBorder = Color(0x33000000); pillBg = Color(0x1A3D6BFF)
     }
 }
 
