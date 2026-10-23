@@ -254,3 +254,44 @@ fun AdSourcesDialog(settings: com.mihomo.tproxy.model.ProxySettings, vm: com.mih
         }
     )
 }
+
+@Composable
+fun MergeFilterDialog(current: String, onDismiss: () -> Unit, onApply: (String) -> Unit) {
+    var text by remember { mutableStateOf(current) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Palette.bg2,
+        title = { Text("聚合节点过滤", color = Palette.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+        text = {
+            Column {
+                Text("整合时排除名字里包含这些关键词的节点，多个关键词用逗号分隔", color = Palette.textFaint, fontSize = 11.sp)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    placeholder = { Text("例如：剩余流量,官网,试用", color = Palette.textFaint, fontSize = 12.sp) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Palette.primary.copy(alpha = 0.6f),
+                        unfocusedBorderColor = Palette.cardBorder,
+                        focusedContainerColor = Palette.card,
+                        unfocusedContainerColor = Palette.card,
+                        cursorColor = Palette.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Text(
+                "保存",
+                color = Palette.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickableNoRipple { onApply(text.trim()) }.padding(8.dp)
+            )
+        },
+        dismissButton = {
+            Text("取消", color = Palette.textDim, modifier = Modifier.clickableNoRipple { onDismiss() }.padding(8.dp))
+        }
+    )
+}

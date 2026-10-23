@@ -382,9 +382,13 @@ object ConfigComposer {
 
     /** Merge every source into one deduplicated config with region groups. */
     fun merge(sources: List<String>, s: ProxySettings): String {
+        val keys = s.mergeFilter.split(",", "，", " ", "\n")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
         val all = sources.filter { it.isNotBlank() }
             .flatMap { nodesOf(ShareLinks.expand(it)) }
             .filterNot { isJunkNode(it.name) }
+            .filterNot { node -> keys.any { node.name.contains(it, ignoreCase = true) } }
         return buildConfig(dedupe(all), s)
     }
 

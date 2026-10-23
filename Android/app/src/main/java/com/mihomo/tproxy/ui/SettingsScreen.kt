@@ -73,6 +73,12 @@ fun SettingsScreen(
                 Divider()
                 SettingRow("分流规则", ruleLabel(s.rulePreset), onClick = { dialog = "rule" })
                 Divider()
+                SettingRow(
+                    "聚合节点过滤",
+                    if (s.mergeFilter.isBlank()) "不过滤（整合全部节点）" else "排除：" + s.mergeFilter,
+                    onClick = { dialog = "mergefilter" }
+                )
+                Divider()
                 SettingRow("分应用代理", if (!s.perAppEnabled) "关闭" else (if (s.perAppWhitelist) "白名单 " else "黑名单 ") + s.perAppPackages.size + " 个应用") {
                     Switch(
                         checked = s.perAppEnabled,
@@ -109,8 +115,9 @@ fun SettingsScreen(
                     SettingRow(
                         "在线规则源",
                         if (s.adSources.isEmpty()) "未添加（仅用内置规则）"
-                        else s.adSources.size.toString() + " 个源 · " + total + " 条规则"
-                    ) { dialog = "ads" }
+                        else s.adSources.size.toString() + " 个源 · " + total + " 条规则",
+                        onClick = { dialog = "ads" }
+                    )
                     Divider()
                     SettingRow("立即更新规则", "上次更新 " + fmtTime(last), onClick = { vm.updateAdRules() })
                     Divider()
@@ -173,6 +180,13 @@ fun SettingsScreen(
             }
         }
         Spacer(Modifier.height(110.dp))
+    }
+
+    if (dialog == "mergefilter") {
+        com.mihomo.tproxy.ui.MergeFilterDialog(s.mergeFilter, { dialog = null }) { v ->
+            vm.applySettings(s.copy(mergeFilter = v))
+            dialog = null
+        }
     }
 
     if (dialog == "ads") {

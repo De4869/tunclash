@@ -536,6 +536,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         _state.update { it.copy(groups = groups.sortedBy(order), nodes = nodes) }
+        // the merged profile card should show what is actually loaded, not a stale YAML count
+        val active = store.profile(store.activeId)
+        if (active?.isMerge == true && active.nodeCount != nodes.size) {
+            store.upsert(active.copy(nodeCount = nodes.size))
+            _state.update { it.copy(profiles = store.profiles) }
+        }
     }
 
     fun select(group: String, node: String) {

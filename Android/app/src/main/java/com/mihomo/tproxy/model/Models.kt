@@ -43,6 +43,7 @@ data class ProxySettings(
     val adBlock: Boolean = false,
     val adSources: List<RuleSource> = emptyList(),
     val adUpdateHours: Int = 24,   // 在线规则自动更新间隔（小时）
+    val mergeFilter: String = "",  // 聚合时排除包含这些关键词的节点，逗号分隔
     val bootStart: Boolean = false,
     val secret: String = "mihomo-tproxy"
 )
