@@ -37,6 +37,40 @@ if [ -f "$LIST" ]; then
   done < "$LIST"
 fi
 
+
+# ---- merge every provider into one list, de-duplicated by type+server+port+credential ----
+MERGE="$DATA/all.yaml"
+cat > "$DATA/dedupe.awk" <<'AWKEOF'
+BEGIN { Q = sprintf("%c", 39) }
+function qv(line, key,   i, s, j) {
+  i = index(line, key ": ")
+  if (!i) return ""
+  s = substr(line, i + length(key) + 2)
+  if (substr(s, 1, 1) == Q) { s = substr(s, 2); j = index(s, Q); if (j) s = substr(s, 1, j - 1) }
+  else { j = index(s, ","); if (j) s = substr(s, 1, j - 1) }
+  return s
+}
+/^[ \t]*- \{/ {
+  line = $0; sub(/^[ \t]+/, "", line)
+  n = qv(line, "name")
+  if (n ~ /剩余流量|套餐|到期|过期|已用流量|重置|官网|订阅|客服|试用/) next
+  # mihomo requires unique proxy names inside one provider, so de-duplicate by name
+  k = n
+  if (k in seen) next
+  seen[k] = 1
+  print line
+}
+AWKEOF
+
+{
+  echo "proxies:"
+  for u in $USED; do
+    idx=${u#sub}
+    [ -f "$DATA/p$idx.yaml" ] && cat "$DATA/p$idx.yaml"
+  done | awk -f "$DATA/dedupe.awk"
+} > "$MERGE"
+MERGED=$(grep -c 'name:' "$MERGE" 2>/dev/null)
+
 USECSV=$(echo $USED | tr ' ' ',')
 {
   echo "mixed-port: 7890"
@@ -100,34 +134,30 @@ USECSV=$(echo $USED | tr ' ' ',')
   echo ""
   if [ -n "$USED" ]; then
     echo "proxy-providers:"
-    j=0
-    for u in $USED; do
-      echo "  $u:"
-      echo "    type: file"
-      echo "    path: ./p${u#sub}.yaml"
-      echo "    health-check:"
-      echo "      enable: true"
-      echo "      url: http://www.gstatic.com/generate_204"
-      echo "      interval: 300"
-      j=$((j+1))
-    done
+    echo "  all:"
+    echo "    type: file"
+    echo "    path: ./all.yaml"
+    echo "    health-check:"
+    echo "      enable: true"
+    echo "      url: http://www.gstatic.com/generate_204"
+    echo "      interval: 300"
     echo "proxy-groups:"
     echo "  - name: 🚀 节点选择"
     echo "    type: select"
     echo "    proxies: [♻️ 自动选择, 🔯 故障转移, DIRECT]"
-    echo "    use: [$USECSV]"
+    echo "    use: [all]"
     echo "  - name: ♻️ 自动选择"
     echo "    type: url-test"
     echo "    url: http://www.gstatic.com/generate_204"
     echo "    interval: 300"
     echo "    tolerance: 50"
     echo "    lazy: false"
-    echo "    use: [$USECSV]"
+    echo "    use: [all]"
     echo "  - name: 🔯 故障转移"
     echo "    type: fallback"
     echo "    url: http://www.gstatic.com/generate_204"
     echo "    interval: 300"
-    echo "    use: [$USECSV]"
+    echo "    use: [all]"
     for r in "🇭🇰 香港:香港|HK|Hong Kong" "🇯🇵 日本:日本|JP|Japan|东京|大阪" "🇸🇬 新加坡:新加坡|SG|Singapore|狮城" "🇺🇸 美国:美国|US|United States|洛杉矶|圣何塞" "🇹🇼 台湾:台湾|TW|Taiwan|台北" "🇰🇷 韩国:韩国|KR|Korea|首尔" "🇬🇧 英国:英国|UK|London|伦敦" "🇩🇪 德国:德国|DE|Germany|法兰克福" "🇫🇷 法国:法国|FR|France|巴黎" "🇳🇱 荷兰:荷兰|NL|Amsterdam|阿姆斯特丹"; do
       n=${r%%:*}
       f=${r#*:}
@@ -136,7 +166,7 @@ USECSV=$(echo $USED | tr ' ' ',')
       echo "    url: http://www.gstatic.com/generate_204"
       echo "    interval: 300"
       echo "    tolerance: 50"
-      echo "    use: [$USECSV]"
+      echo "    use: [all]"
       echo "    filter: \"$f\""
     done
     echo "rules:"
@@ -154,4 +184,4 @@ USECSV=$(echo $USED | tr ' ' ',')
 
 mv -f "$TMP" "$CFG"
 chmod 644 "$CFG"
-echo "config written: $CFG (providers:$USED)"
+echo "config written: $CFG (providers:$USED merged:$MERGED nodes)"
