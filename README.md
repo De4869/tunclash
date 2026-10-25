@@ -34,8 +34,9 @@
 | **实时状态** | 上下行速率、累计流量、运行时长、节点延迟、内核日志（实时流） |
 | **开机自启** | 写入 `/data/adb/service.d`，开机 25 秒后自动拉起 |
 | **模块化** | 附带 KernelSU/Magisk 模块 zip（可选），App 单独也能用；模块自带 WebUI（概览/节点/订阅/日志），不装 App 也能操作 |
-| **快捷磁贴** | 下拉通知栏「Mihomo」磁贴一键启停代理，不用打开 App |
-| **外观** | 跟随系统 / 深色 / 浅色三档，浅色模式状态栏图标同步反色 |
+| **快捷磁贴** | 下拉通知栏「TunClash」磁贴一键启停代理；长按直接打开 App |
+| **外观** | 跟随系统 / 深色 / 浅色三档，浅色模式状态栏图标同步反色；桌面与磁贴统一使用「六边形 + T」图标 |
+| **Google Play 兼容** | 自动关闭网卡 IPv6 并让 Play 下载域名走国内 CDN 直连，避免更新卡在 0% |
 | **应用更新** | 「关于 → 检查更新」对比 GitHub 最新 release，有新版时展示更新日志并可跳转下载 |
 | **日志面板** | 级别筛选（全部/警告/错误）、关键字搜索、一键复制、错误标红、滚到底自动跟随 |
 
@@ -63,10 +64,19 @@
 
 ## 3. 安装
 
-### 3.1 只装 App（推荐）
+### 3.1 下载
+
+产物在 [Releases](https://github.com/De4869/tunclash/releases) 页面：
+
+| 文件 | 用途 |
+|---|---|
+| `TunClash-v1.2.9.apk` | App（控制面板 + 一键装内核） |
+| `TunClash-Module-v1.2.9.zip` | KernelSU / Magisk 模块（可脱离 App） |
+
+### 3.2 只装 App（推荐）
 
 ```bash
-adb install -r dist/MihomoTProxy-1.0.0.apk
+adb install -r TunClash-v1.2.9.apk
 ```
 
 1. 打开 App，KernelSU 会弹出 Root 授权 → **允许**（勾选记住）。
@@ -74,15 +84,17 @@ adb install -r dist/MihomoTProxy-1.0.0.apk
 3. 进入「订阅」→ 右上角 **+** → 粘贴订阅链接或节点链接 → 添加。
 4. 回到首页 → 点大圆环开关 → 代理生效。
 
-### 3.2 模块（可选）
+### 3.3 模块（可选）
 
 ```bash
-adb push dist/MihomoTProxy-Module-v1.0.0.zip /data/local/tmp/
-adb shell su -c "ksud module install /data/local/tmp/MihomoTProxy-Module-v1.0.0.zip"
+adb push TunClash-Module-v1.2.9.zip /data/local/tmp/
+adb shell su -c "ksud module install /data/local/tmp/TunClash-Module-v1.2.9.zip"
 ```
 
 模块只负责：装内核/geo/控制脚本 + 开机按 `/data/adb/mihomo_tproxy/auto_start` 标志启动内核。
 App 仍然是控制面板；两者共用同一套运行时目录。
+
+> 启动内核时脚本会自动关闭各网卡的 IPv6：隧道只承载 IPv4，保留 IPv6 会让 Google Play 等应用绕过代理直连，表现为"下载一直 0%"。
 
 ## 4. 使用要点
 
