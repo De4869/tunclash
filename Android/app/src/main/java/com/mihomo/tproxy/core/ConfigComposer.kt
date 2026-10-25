@@ -219,15 +219,15 @@ object ConfigComposer {
             else -> {
                 // domain based first: domestic DNS answers for blocked domains are often polluted,
                 // so GEOIP,CN alone would send google/youtube DIRECT.
-                rules += "GEOSITE,geolocation-!cn," + target
                 rules += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
-                rules += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
-                rules += "DOMAIN-SUFFIX,services.googleapis.cn," + target
+                rules += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target + ""
+                rules += "DOMAIN-SUFFIX,services.googleapis.cn," + target + ""
                 rules += "DOMAIN-SUFFIX,gvt1.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,gvt2.com,DIRECT"
-                rules += "DOMAIN-SUFFIX,googleusercontent.com,DIRECT"
-                rules += "DOMAIN-SUFFIX,ggpht.com," + target
+                rules += "DOMAIN-SUFFIX,googleusercontent.com," + target + ""
+                rules += "DOMAIN-SUFFIX,ggpht.com," + target + ""
                 rules += "DOMAIN,dl.google.com,DIRECT"
+                rules += "GEOSITE,geolocation-!cn," + target
                 rules += "DOMAIN-SUFFIX,cn,DIRECT"
                 rules += "GEOSITE,cn,DIRECT"
                 rules += "GEOIP,CN,DIRECT"

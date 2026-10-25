@@ -174,7 +174,6 @@ USECSV=$(echo $USED | tr ' ' ',')
       echo "    filter: \"$f\""
     done
     echo "rules:"
-    echo "  - GEOSITE,geolocation-!cn,🚀 节点选择"
     echo "  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
     echo "  - DOMAIN-SUFFIX,clientservices.googleapis.com,🚀 节点选择"
     echo "  - DOMAIN-SUFFIX,services.googleapis.cn,🚀 节点选择"
@@ -182,6 +181,7 @@ USECSV=$(echo $USED | tr ' ' ',')
     echo "  - DOMAIN-SUFFIX,gvt2.com,DIRECT"
     echo "  - DOMAIN-SUFFIX,googleusercontent.com,🚀 节点选择"
     echo "  - DOMAIN,dl.google.com,DIRECT"
+    echo "  - GEOSITE,geolocation-!cn,🚀 节点选择"
     echo "  - GEOSITE,cn,DIRECT"
     echo "  - GEOIP,CN,DIRECT"
     echo "  - MATCH,🚀 节点选择"

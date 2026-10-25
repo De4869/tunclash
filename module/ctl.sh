@@ -26,8 +26,20 @@ cleanup_rules() {
   return 0
 }
 
+# The tunnel only carries IPv4; Google Play prefers IPv6 and would stall otherwise.
+disable_ipv6_on_ifaces() {
+  for i in $(ls /sys/class/net 2>/dev/null); do
+    case "$i" in
+      lo|mihomo0|tun*|docker*|veth*) continue ;;
+    esac
+    f="/proc/sys/net/ipv6/conf/$i/disable_ipv6"
+    [ -w "$f" ] && echo 1 > "$f" 2>/dev/null
+  done
+}
+
 start() {
   if is_running; then echo "already running"; return 0; fi
+  disable_ipv6_on_ifaces
   rm -f "$PIDF"
   cleanup_rules
   mkdir -p $DIR/run $DIR/logs $DIR/data
