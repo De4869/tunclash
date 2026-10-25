@@ -26,11 +26,22 @@
             android:name=".QuickTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile"
-            android:label="Mihomo 代理"
+            android:label="TunClash"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <activity-alias
+            android:name=".TileLongPressActivity"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:label="TunClash"
+            android:icon="@drawable/ic_tile">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>

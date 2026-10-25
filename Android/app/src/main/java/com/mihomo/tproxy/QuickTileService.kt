@@ -42,7 +42,7 @@ class QuickTileService : TileService() {
             withContext(Dispatchers.Main) {
                 qsTile?.let { tile ->
                     tile.state = if (running) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-                    tile.label = "Mihomo"
+                    tile.label = "TunClash"
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         tile.subtitle = if (running) "已连接" else "未运行"
                     }
