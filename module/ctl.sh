@@ -26,20 +26,26 @@ cleanup_rules() {
   return 0
 }
 
-# The tunnel only carries IPv4; Google Play prefers IPv6 and would stall otherwise.
-disable_ipv6_on_ifaces() {
-  for i in $(ls /sys/class/net 2>/dev/null); do
-    case "$i" in
-      lo|mihomo0|tun*|docker*|veth*) continue ;;
-    esac
-    f="/proc/sys/net/ipv6/conf/$i/disable_ipv6"
-    [ -w "$f" ] && echo 1 > "$f" 2>/dev/null
-  done
+# When IPv6 is disabled in the config the tunnel only carries IPv4. Some apps (Google
+# Play / GMS) resolve AAAA on their own and would then bypass the tunnel, so IPv6
+# egress is rejected while the proxy runs. The interface addresses stay untouched.
+ipv6_enabled() { grep -qE '^ipv6: *true' "$1" 2>/dev/null; }
+
+block_ipv6() {
+  command -v ip6tables >/dev/null 2>&1 || return 0
+  ipv6_enabled "$CFG" && return 0
+  ip6tables -C OUTPUT -o lo -j ACCEPT 2>/dev/null || ip6tables -I OUTPUT 1 -o lo -j ACCEPT 2>/dev/null
+  ip6tables -C OUTPUT -j REJECT 2>/dev/null || ip6tables -I OUTPUT 2 -j REJECT 2>/dev/null
+}
+
+unblock_ipv6() {
+  command -v ip6tables >/dev/null 2>&1 || return 0
+  while ip6tables -D OUTPUT -j REJECT 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -o lo -j ACCEPT 2>/dev/null; do :; done
 }
 
 start() {
   if is_running; then echo "already running"; return 0; fi
-  disable_ipv6_on_ifaces
   rm -f "$PIDF"
   cleanup_rules
   mkdir -p $DIR/run $DIR/logs $DIR/data
@@ -47,6 +53,7 @@ start() {
   cd $DIR/data || return 1
   nohup $BIN -d $DIR/data -f $CFG >> $LOGF 2>&1 &
   echo $! > $PIDF
+  block_ipv6
   i=0
   while [ $i -lt 80 ]; do
     if grep -q "RESTful API listening" $LOGF 2>/dev/null; then echo started; return 0; fi
@@ -69,6 +76,7 @@ stop() {
   fi
   pkill -TERM -f "$BIN" 2>/dev/null
   sleep 0.3
+  unblock_ipv6
   cleanup_rules
   echo stopped
 }

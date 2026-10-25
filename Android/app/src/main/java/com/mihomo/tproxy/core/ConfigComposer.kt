@@ -121,6 +121,7 @@ object ConfigComposer {
         b.append("  enable: true\n")
         b.append("  stack: ").append(s.tunStack).append("\n")
         b.append("  device: mihomo0\n")
+        b.append("  ipv6: ").append(s.ipv6).append("\n")
         b.append("  auto-route: true\n")
         b.append("  auto-detect-interface: true\n")
         b.append("  dns-hijack:\n    - any:53\n")
