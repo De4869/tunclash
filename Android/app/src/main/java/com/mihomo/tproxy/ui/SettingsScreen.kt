@@ -48,6 +48,7 @@ fun SettingsScreen(
     val s = state.settings
     var dialog by remember { mutableStateOf<String?>(null) }
     var showAppUpdate by remember { mutableStateOf(false) }
+    var showIpv6Warning by remember { mutableStateOf(false) }
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
 
     androidx.compose.runtime.LaunchedEffect(state.appUpdateVersion) {
@@ -135,7 +136,13 @@ fun SettingsScreen(
                 SettingRow("DNS", dnsLabel(s.dnsPreset), onClick = { dialog = "dns" })
                 Divider()
                 SettingRow("IPv6", if (s.ipv6) "已开启（需要节点支持）" else "已关闭，避免泄漏") {
-                    Switch(checked = s.ipv6, onCheckedChange = { vm.applySettings(s.copy(ipv6 = it)) }, colors = switchColors())
+                    Switch(
+                        checked = s.ipv6,
+                        onCheckedChange = { on ->
+                            if (on) showIpv6Warning = true else vm.applySettings(s.copy(ipv6 = false))
+                        },
+                        colors = switchColors()
+                    )
                 }
                 Divider()
                 SettingRow("TUN 栈", s.tunStack, onClick = { dialog = "stack" })
@@ -203,6 +210,33 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(110.dp))
+    }
+
+    if (showIpv6Warning) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showIpv6Warning = false },
+            containerColor = Palette.bg2,
+            title = { Text("开启 IPv6？", color = Palette.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+            text = {
+                Text(
+                    "开启后 IPv6 流量会进入隧道、经代理转发，需要当前节点支持 IPv6。\n\n" +
+                        "节点不支持时，IPv6 站点会连接失败（IPv4 不受影响）；部分场景下还可能出现真实 IPv6 地址泄漏。\n\n" +
+                        "如果不确定，保持关闭即可，日常使用不受影响。",
+                    color = Palette.textDim, fontSize = 12.sp, lineHeight = 18.sp
+                )
+            },
+            confirmButton = {
+                Text("仍然开启", color = Palette.primary, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickableNoRipple {
+                        showIpv6Warning = false
+                        vm.applySettings(state.settings.copy(ipv6 = true))
+                    }.padding(8.dp))
+            },
+            dismissButton = {
+                Text("保持关闭", color = Palette.textDim,
+                    modifier = Modifier.clickableNoRipple { showIpv6Warning = false }.padding(8.dp))
+            }
+        )
     }
 
     if (showAppUpdate && state.appUpdateVersion.isNotBlank()) {
