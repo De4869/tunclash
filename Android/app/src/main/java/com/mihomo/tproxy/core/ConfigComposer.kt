@@ -223,11 +223,11 @@ object ConfigComposer {
                 rules += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
                 rules += "DOMAIN-SUFFIX,services.googleapis.cn," + target
-                rules += "DOMAIN-SUFFIX,gvt1.com," + target
-                rules += "DOMAIN-SUFFIX,gvt2.com," + target
-                rules += "DOMAIN-SUFFIX,googleusercontent.com," + target
+                rules += "DOMAIN-SUFFIX,gvt1.com,DIRECT"
+                rules += "DOMAIN-SUFFIX,gvt2.com,DIRECT"
+                rules += "DOMAIN-SUFFIX,googleusercontent.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,ggpht.com," + target
-                rules += "DOMAIN,dl.google.com," + target
+                rules += "DOMAIN,dl.google.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,cn,DIRECT"
                 rules += "GEOSITE,cn,DIRECT"
                 rules += "GEOIP,CN,DIRECT"
@@ -383,11 +383,11 @@ object ConfigComposer {
             smart += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
             smart += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
             smart += "DOMAIN-SUFFIX,services.googleapis.cn," + target
-            smart += "DOMAIN-SUFFIX,gvt1.com," + target
-            smart += "DOMAIN-SUFFIX,gvt2.com," + target
-            smart += "DOMAIN-SUFFIX,googleusercontent.com," + target
+            smart += "DOMAIN-SUFFIX,gvt1.com,DIRECT"
+            smart += "DOMAIN-SUFFIX,gvt2.com,DIRECT"
+            smart += "DOMAIN-SUFFIX,googleusercontent.com,DIRECT"
             smart += "DOMAIN-SUFFIX,ggpht.com," + target
-            smart += "DOMAIN,dl.google.com," + target
+            smart += "DOMAIN,dl.google.com,DIRECT"
             if (s.rulePreset == "smart") {
                 smart += "GEOSITE,geolocation-!cn," + target
                 smart += "GEOSITE,cn,DIRECT"
