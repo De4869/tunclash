@@ -12,8 +12,8 @@ android {
         applicationId = "com.mihomo.tproxy"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.2.5"
+        versionCode = 9
+        versionName = "1.2.6"
     }
 
     buildFeatures {
