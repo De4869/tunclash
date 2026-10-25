@@ -135,7 +135,7 @@ fun SettingsScreen(
                 Divider()
                 SettingRow("DNS", dnsLabel(s.dnsPreset), onClick = { dialog = "dns" })
                 Divider()
-                SettingRow("IPv6", if (s.ipv6) "已开启（需要节点支持）" else "已关闭，避免泄漏") {
+                SettingRow("IPv6", if (s.ipv6) "已开启 · 需节点支持 IPv6，否则可能影响 Google 下载" else "已关闭 · 全部走 IPv4，最稳定") {
                     Switch(
                         checked = s.ipv6,
                         onCheckedChange = { on ->
@@ -220,8 +220,10 @@ fun SettingsScreen(
             text = {
                 Text(
                     "开启后 IPv6 流量会进入隧道、经代理转发，需要当前节点支持 IPv6。\n\n" +
-                        "节点不支持时，IPv6 站点会连接失败（IPv4 不受影响）；部分场景下还可能出现真实 IPv6 地址泄漏。\n\n" +
-                        "如果不确定，保持关闭即可，日常使用不受影响。",
+                        "⚠️ 节点不支持 IPv6 时：Google Play 等应用可能无法下载/更新（一直停在等待中），" +
+                        "部分 IPv6 站点也会连接失败；IPv4 一般会回退，但下载类应用回退较慢。\n\n" +
+                        "⚠️ 还可能出现真实 IPv6 地址泄漏。\n\n" +
+                        "不确定节点是否支持时，建议保持关闭——日常上网与下载不受影响。",
                     color = Palette.textDim, fontSize = 12.sp, lineHeight = 18.sp
                 )
             },
