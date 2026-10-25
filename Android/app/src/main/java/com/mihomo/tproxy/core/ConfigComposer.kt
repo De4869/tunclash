@@ -136,8 +136,10 @@ object ConfigComposer {
         b.append("  ipv6: ").append(s.ipv6).append("\n")
         b.append("  enhanced-mode: fake-ip\n")
         b.append("  fake-ip-range: 198.18.0.1/16\n")
+        b.append("  respect-rules: true\n")
         b.append("  fake-ip-filter:\n")
         listOf(
+            "geosite:geolocation-!cn",
             "*.lan", "*.local", "*.localdomain", "localhost.ptlogin2.qq.com",
             "+.msftconnecttest.com", "+.msftncsi.com", "time.*.com", "ntp.*.com",
             "+.srv.nintendo.net", "+.stun.playstation.net", "xbox.*.microsoft.com",
@@ -147,6 +149,8 @@ object ConfigComposer {
         b.append("  proxy-server-nameserver:\n    - 223.5.5.5\n    - 119.29.29.29\n")
         b.append("  nameserver:\n")
         dns.forEach { b.append("    - ").append(Yaml.quote(it)).append("\n") }
+        b.append("  nameserver-policy:\n")
+        b.append("    \"geosite:cn,private\": [\"https://dns.alidns.com/dns-query\", \"223.5.5.5\", \"119.29.29.29\"]\n")
         return b.toString()
     }
 
@@ -216,6 +220,14 @@ object ConfigComposer {
                 // domain based first: domestic DNS answers for blocked domains are often polluted,
                 // so GEOIP,CN alone would send google/youtube DIRECT.
                 rules += "GEOSITE,geolocation-!cn," + target
+                rules += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
+                rules += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
+                rules += "DOMAIN-SUFFIX,services.googleapis.cn," + target
+                rules += "DOMAIN-SUFFIX,gvt1.com," + target
+                rules += "DOMAIN-SUFFIX,gvt2.com," + target
+                rules += "DOMAIN-SUFFIX,googleusercontent.com," + target
+                rules += "DOMAIN-SUFFIX,ggpht.com," + target
+                rules += "DOMAIN,dl.google.com," + target
                 rules += "DOMAIN-SUFFIX,cn,DIRECT"
                 rules += "GEOSITE,cn,DIRECT"
                 rules += "GEOIP,CN,DIRECT"
@@ -365,9 +377,18 @@ object ConfigComposer {
         }
         var stripped = withProviders(Yaml.stripManaged(text).trim(), s)
         val smart = mutableListOf<String>()
-        if (s.rulePreset == "smart") {
-            val target = mainTarget(stripped)
-            if (target != null) {
+        val target = mainTarget(stripped)
+        if (target != null) {
+            // Google Play downloads resolve to CN CDN ips and would be sent DIRECT by GEOIP,CN
+            smart += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
+            smart += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
+            smart += "DOMAIN-SUFFIX,services.googleapis.cn," + target
+            smart += "DOMAIN-SUFFIX,gvt1.com," + target
+            smart += "DOMAIN-SUFFIX,gvt2.com," + target
+            smart += "DOMAIN-SUFFIX,googleusercontent.com," + target
+            smart += "DOMAIN-SUFFIX,ggpht.com," + target
+            smart += "DOMAIN,dl.google.com," + target
+            if (s.rulePreset == "smart") {
                 smart += "GEOSITE,geolocation-!cn," + target
                 smart += "GEOSITE,cn,DIRECT"
             }
