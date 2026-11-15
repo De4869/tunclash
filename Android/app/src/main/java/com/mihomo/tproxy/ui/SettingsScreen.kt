@@ -135,7 +135,7 @@ fun SettingsScreen(
                 Divider()
                 SettingRow("DNS", dnsLabel(s.dnsPreset), onClick = { dialog = "dns" })
                 Divider()
-                SettingRow("IPv6", if (s.ipv6) "已开启 · 需节点支持 IPv6，否则可能影响 Google 下载" else "已关闭 · 全部走 IPv4，最稳定") {
+                SettingRow("IPv6", if (s.ipv6) "已开启 · 需节点支持 IPv6，否则可能影响 Google 下载" else "已关闭 · 应用 IPv6 在核心里拒绝，不影响电话") {
                     Switch(
                         checked = s.ipv6,
                         onCheckedChange = { on ->

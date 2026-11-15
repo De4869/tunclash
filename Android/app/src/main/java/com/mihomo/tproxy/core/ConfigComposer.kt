@@ -12,6 +12,12 @@ object ConfigComposer {
     const val AUTO = "♻️ 自动选择"
     const val FALLBACK = "🔯 故障转移"
     const val BALANCE = "⚖️ 负载均衡"
+    const val AI = "🤖 AI"
+    const val STREAM = "📺 流媒体"
+    const val TELEGRAM = "✈️ Telegram"
+    const val GAME = "🎮 游戏"
+    const val APPLE = "🍎 Apple"
+    const val MICROSOFT = "Ⓜ️ Microsoft"
 
     data class Node(val block: String, val name: String, val type: String, val server: String, val port: String) {
         val key: String get() = type + "|" + server + "|" + port + "|" + Yaml.field(block, "uuid") + Yaml.field(block, "password")
@@ -99,7 +105,9 @@ object ConfigComposer {
         b.append("bind-address: 127.0.0.1\n")
         b.append("mode: ").append(if (s.mode == "direct") "rule" else s.mode).append("\n")
         b.append("log-level: ").append(s.logLevel).append("\n")
-        b.append("ipv6: ").append(s.ipv6).append("\n")
+        // Keep the core dual-stack: IPv6 is rejected by a rule when the user
+        // turns it off, instead of blocking IPv6 in the system (which breaks IMS).
+        b.append("ipv6: true\n")
         b.append("unified-delay: true\n")
         b.append("tcp-concurrent: true\n")
         b.append("find-process-mode: strict\n")
@@ -121,7 +129,7 @@ object ConfigComposer {
         b.append("  enable: true\n")
         b.append("  stack: ").append(s.tunStack).append("\n")
         b.append("  device: mihomo0\n")
-        b.append("  ipv6: ").append(s.ipv6).append("\n")
+        b.append("  ipv6: true\n")
         b.append("  auto-route: true\n")
         b.append("  auto-detect-interface: true\n")
         b.append("  dns-hijack:\n    - any:53\n")
@@ -197,12 +205,28 @@ object ConfigComposer {
         if (!s.adBlock) emptyList()
         else listOf("GEOSITE,category-ads-all,REJECT", "DOMAIN-KEYWORD,adservice,REJECT")
 
+    /**
+     * Built-in Play download CDNs. They must stay before the ad rule sets:
+     * a rule update must never be able to classify these as ads and stall
+     * downloads. They follow the selected proxy group.
+     */
+    private fun playCdnRules(target: String): List<String> = listOf(
+        "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,$target",
+        "DOMAIN-SUFFIX,gvt1.com,$target",
+        "DOMAIN-SUFFIX,gvt2.com,$target",
+        "DOMAIN,dl.google.com,$target"
+    )
+
     private fun rulesFor(s: ProxySettings, target: String, includeDirect: Boolean = true): List<String> {
         val rules = mutableListOf<String>()
         val perApp = perAppRules(s)
         rules += perApp
+        rules += playCdnRules(target)
         rules += adProviderRules(s)
         rules += adRules(s)
+        // IPv6 off means "reject IPv6 inside the tunnel", not "block IPv6 in
+        // the system": IMS/VoLTE uses an IPv6-only PDN and must stay untouched.
+        if (!s.ipv6) rules += "IP-CIDR6,::/0,REJECT"
         if (includeDirect) {
             rules += "DOMAIN-SUFFIX,lan,DIRECT"
             rules += "DOMAIN-SUFFIX,local,DIRECT"
@@ -220,14 +244,34 @@ object ConfigComposer {
             else -> {
                 // domain based first: domestic DNS answers for blocked domains are often polluted,
                 // so GEOIP,CN alone would send google/youtube DIRECT.
-                rules += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target + ""
                 rules += "DOMAIN-SUFFIX,services.googleapis.cn," + target + ""
-                rules += "DOMAIN-SUFFIX,gvt1.com,DIRECT"
-                rules += "DOMAIN-SUFFIX,gvt2.com,DIRECT"
                 rules += "DOMAIN-SUFFIX,googleusercontent.com," + target + ""
                 rules += "DOMAIN-SUFFIX,ggpht.com," + target + ""
-                rules += "DOMAIN,dl.google.com,DIRECT"
+                // Business groups use the bundled geosite data, so no remote
+                // rule-provider is required and Play CDN rules stay above them.
+                rules += "GEOSITE,openai," + AI
+                rules += "GEOIP,openai," + AI
+                rules += "GEOSITE,anthropic," + AI
+                rules += "DOMAIN-SUFFIX,claude.ai," + AI
+                rules += "DOMAIN-SUFFIX,gemini.google.com," + AI
+                rules += "DOMAIN-SUFFIX,bard.google.com," + AI
+                rules += "DOMAIN-SUFFIX,aistudio.google.com," + AI
+                rules += "DOMAIN-SUFFIX,generativelanguage.googleapis.com," + AI
+                rules += "GEOSITE,netflix," + STREAM
+                rules += "GEOIP,netflix," + STREAM
+                rules += "GEOSITE,disney," + STREAM
+                rules += "GEOIP,disney," + STREAM
+                rules += "GEOSITE,youtube," + STREAM
+                rules += "GEOSITE,spotify," + STREAM
+                rules += "DOMAIN-SUFFIX,primevideo.com," + STREAM
+                rules += "DOMAIN-SUFFIX,amazonvideo.com," + STREAM
+                rules += "GEOSITE,telegram," + TELEGRAM
+                rules += "GEOIP,telegram," + TELEGRAM
+                rules += "GEOSITE,steam," + GAME
+                rules += "GEOSITE,epicgames," + GAME
+                rules += "GEOSITE,apple," + APPLE
+                rules += "GEOSITE,microsoft," + MICROSOFT
                 rules += "GEOSITE,geolocation-!cn," + target
                 rules += "DOMAIN-SUFFIX,cn,DIRECT"
                 rules += "GEOSITE,cn,DIRECT"
@@ -316,26 +360,39 @@ object ConfigComposer {
         list(listOf(AUTO, FALLBACK, BALANCE) + regions.keys.toList() + names)
         // url-test
         b.append("  - name: ").append(q(AUTO)).append("\n    type: url-test\n")
-        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 300\n    tolerance: 50\n")
+        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 180\n    tolerance: 50\n")
         b.append("    lazy: false\n    proxies:\n")
         list(names)
         // fallback
         b.append("  - name: ").append(q(FALLBACK)).append("\n    type: fallback\n")
-        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 300\n")
+        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 180\n    lazy: false\n")
         b.append("    proxies:\n")
         list(names)
         // load balance
         b.append("  - name: ").append(q(BALANCE)).append("\n    type: load-balance\n")
-        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 300\n    strategy: consistent-hashing\n")
+        b.append("    url: http://www.gstatic.com/generate_204\n    interval: 180\n    strategy: consistent-hashing\n")
         b.append("    proxies:\n")
         list(names)
         // region groups
         regions.forEach { (label, members) ->
             b.append("  - name: ").append(q(label)).append("\n    type: url-test\n")
-            b.append("    url: http://www.gstatic.com/generate_204\n    interval: 300\n    tolerance: 50\n")
-            b.append("    proxies:\n")
+            b.append("    url: http://www.gstatic.com/generate_204\n    interval: 180\n    tolerance: 50\n")
+            b.append("    lazy: false\n    proxies:\n")
             list(members)
         }
+        // Business groups: select groups switch instantly; their members use the
+        // same url-test/fallback groups, so a network change only re-tests those.
+        val base = listOf(TARGET, AUTO, FALLBACK, BALANCE) + regions.keys.toList()
+        fun service(name: String, proxies: List<String>) {
+            b.append("  - name: ").append(q(name)).append("\n    type: select\n    proxies:\n")
+            list(proxies)
+        }
+        service(AI, base)
+        service(STREAM, base)
+        service(TELEGRAM, base)
+        service(GAME, listOf("DIRECT") + base)
+        service(APPLE, listOf("DIRECT") + base)
+        service(MICROSOFT, listOf("DIRECT") + base)
         return b.toString()
     }
 
@@ -379,22 +436,18 @@ object ConfigComposer {
         var stripped = withProviders(Yaml.stripManaged(text).trim(), s)
         val smart = mutableListOf<String>()
         val target = mainTarget(stripped)
+        val playCdn = if (target != null) playCdnRules(target) else emptyList()
         if (target != null) {
-            // Google Play downloads resolve to CN CDN ips and would be sent DIRECT by GEOIP,CN
-            smart += "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,DIRECT"
             smart += "DOMAIN-SUFFIX,clientservices.googleapis.com," + target
             smart += "DOMAIN-SUFFIX,services.googleapis.cn," + target
-            smart += "DOMAIN-SUFFIX,gvt1.com,DIRECT"
-            smart += "DOMAIN-SUFFIX,gvt2.com,DIRECT"
-            smart += "DOMAIN-SUFFIX,googleusercontent.com,DIRECT"
+            smart += "DOMAIN-SUFFIX,googleusercontent.com," + target
             smart += "DOMAIN-SUFFIX,ggpht.com," + target
-            smart += "DOMAIN,dl.google.com,DIRECT"
             if (s.rulePreset == "smart") {
                 smart += "GEOSITE,geolocation-!cn," + target
                 smart += "GEOSITE,cn,DIRECT"
             }
         }
-        val extraRules = adProviderRules(s) + adRules(s) + smart
+        val extraRules = playCdn + adProviderRules(s) + adRules(s) + smart
         if (extraRules.isNotEmpty()) {
             val whitelist = s.perAppEnabled && s.perAppWhitelist && s.perAppPackages.isNotEmpty()
             stripped = Yaml.insertRules(stripped, if (whitelist) extraRules + "MATCH,DIRECT" else extraRules)

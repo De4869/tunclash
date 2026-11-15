@@ -5,10 +5,16 @@ BIN=$DIR/bin/mihomo
 CFG=$DIR/data/config.yaml
 LOGF=$DIR/logs/core.log
 PIDF=$DIR/run/core.pid
+TUN=mihomo0
 
 is_running() {
   [ -f "$PIDF" ] || return 1
-  kill -0 "$(cat $PIDF 2>/dev/null)" 2>/dev/null
+  P=$(cat "$PIDF" 2>/dev/null)
+  [ -n "$P" ] || return 1
+  kill -0 "$P" 2>/dev/null || return 1
+  # PID files survive reboots and PIDs get reused: make sure it is really mihomo
+  tr '\0' ' ' < /proc/$P/cmdline 2>/dev/null | grep -q mihomo || return 1
+  return 0
 }
 
 cleanup_rules() {
@@ -21,8 +27,53 @@ cleanup_rules() {
   return 0
 }
 
+# IPv6 is handled at the TUN boundary. tun.ipv6 stays enabled so IPv6 does not
+# leak, and when the config contains IP-CIDR6,::/0,REJECT (the user turned IPv6
+# off) we reject only packets whose output interface is the proxy TUN. Telephony
+# uses rmnet_dataX, never mihomo0, so IMS/VoLTE on an IPv6-only PDN is untouched.
+# Older builds rejected IPv6 globally, which broke calls/SMS; cleanup_ipv6()
+# removes those legacy rules.
+
+google_uids() {
+  for pkg in com.android.vending com.google.android.gms com.google.android.gsf; do
+    uid=$(stat -c %u "/data/data/$pkg" 2>/dev/null)
+    [ -n "$uid" ] && echo "$uid"
+  done
+}
+
+ipv6_disabled() { grep -q 'IP-CIDR6,::/0,REJECT' "$CFG" 2>/dev/null; }
+
+block_tun_ipv6() {
+  command -v ip6tables >/dev/null 2>&1 || return 0
+  ipv6_disabled || return 0
+  ip6tables -C OUTPUT -o $TUN -j REJECT --reject-with icmp6-port-unreachable 2>/dev/null ||
+    ip6tables -I OUTPUT 1 -o $TUN -j REJECT --reject-with icmp6-port-unreachable 2>/dev/null
+}
+
+cleanup_ipv6() {
+  command -v ip6tables >/dev/null 2>&1 || return 0
+  # Drop rules written by older builds (global reject, selective IMS rules,
+  # Play/GMS-only reject) and our TUN-scoped rule.
+  while ip6tables -D OUTPUT -o $TUN -j REJECT 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -o $TUN -j REJECT --reject-with icmp6-port-unreachable 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -j REJECT 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -j REJECT --reject-with icmp6-port-unreachable 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -o lo -j ACCEPT 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -p ipv6-icmp -j ACCEPT 2>/dev/null; do :; done
+  while ip6tables -D OUTPUT -p udp -m udp --dport 547 -j ACCEPT 2>/dev/null; do :; done
+  for uid in 1001 10110 10111; do
+    while ip6tables -D OUTPUT -m owner --uid-owner "$uid" -j ACCEPT 2>/dev/null; do :; done
+  done
+  for uid in $(google_uids); do
+    while ip6tables -D OUTPUT -m owner --uid-owner "$uid" -j REJECT 2>/dev/null; do :; done
+    while ip6tables -D OUTPUT -m owner --uid-owner "$uid" -j REJECT --reject-with icmp6-port-unreachable 2>/dev/null; do :; done
+  done
+}
+
 start() {
   if is_running; then echo "already running"; return 0; fi
+  rm -f "$PIDF"
+  cleanup_ipv6
   cleanup_rules
   mkdir -p $DIR/run $DIR/logs $DIR/data
   if [ -f "$LOGF" ]; then mv -f "$LOGF" "$LOGF.old"; fi
@@ -31,11 +82,12 @@ start() {
   echo $! > $PIDF
   i=0
   while [ $i -lt 80 ]; do
-    if grep -q "RESTful API listening" $LOGF 2>/dev/null; then echo started; return 0; fi
+    if grep -q "RESTful API listening" $LOGF 2>/dev/null; then block_tun_ipv6; echo started; return 0; fi
     if ! kill -0 $(cat $PIDF 2>/dev/null) 2>/dev/null; then echo "exit early"; return 1; fi
     sleep 0.1
     i=$((i+1))
   done
+  block_tun_ipv6
   echo started
   return 0
 }
@@ -51,6 +103,7 @@ stop() {
   fi
   pkill -TERM -f "$BIN" 2>/dev/null
   sleep 0.3
+  cleanup_ipv6
   cleanup_rules
   echo stopped
 }
@@ -60,6 +113,6 @@ case "$1" in
   stop) stop ;;
   restart) stop; sleep 0.5; start ;;
   status) if is_running; then echo running; else echo stopped; fi ;;
-  cleanup) cleanup_rules; echo cleaned ;;
+  cleanup) cleanup_ipv6; cleanup_rules; echo cleaned ;;
   *) echo "usage: $0 start|stop|restart|status|cleanup" ;;
 esac

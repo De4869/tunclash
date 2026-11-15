@@ -1,5 +1,17 @@
 # Changelog
 
+## 未发布
+
+**修复**
+
+- 修复全局阻断 IPv6 导致部分运营商（IMS PDN 为 IPv6-only）双卡 VoLTE/IMS 掉注册：表现为 5G 信号和移动数据正常，但打不了电话、收不到短信，重启后才恢复
+- 改为 TUN 双栈 + 内核规则 `IP-CIDR6,::/0,REJECT` 拒绝应用 IPv6（不再使用系统 ip6tables），保留 Play 下载修复，不影响电话/短信
+- 内核启动/停止时自动清理旧版本写入的全局 IPv6 阻断规则
+- 修复 Google Play 下载一直停在“等待中”：Play 下载 CDN `xn--ngstr-lra8j.com`、`gvt1.com`、`gvt2.com`、`dl.google.com` 之前走 DIRECT 拉不动，改为跟随代理节点
+- Play CDN 规则是内置规则，排在广告规则集和 GEOSITE 之前，规则自动更新不会覆盖
+- 新增内置业务分流组：AI / 流媒体 / Telegram / 游戏 / Apple / Microsoft，基于 geosite/geoip，不依赖远程规则库
+- url-test / fallback 健康检查改为 180 秒且 `lazy: false`，切换网络或节点时恢复更快
+
 ## v1.3.0
 
 **改进**
