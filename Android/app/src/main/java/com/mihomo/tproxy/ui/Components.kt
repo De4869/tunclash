@@ -90,7 +90,7 @@ fun Modifier.clickableNoRipple(enabled: Boolean = true, onClick: () -> Unit): Mo
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    corner: Int = 22,
+    corner: Int = 18,
     highlight: Boolean = false,
     padding: Int = 16,
     content: @Composable () -> Unit
@@ -157,17 +157,22 @@ fun PowerOrb(
     diameter: androidx.compose.ui.unit.Dp = 208.dp,
     onClick: () -> Unit
 ) {
-    val transition = rememberInfiniteTransition()
-    val spin by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart)
-    )
-    val pulse by transition.animateFloat(
-        initialValue = 0.96f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse)
-    )
+    // Only animate while connected or busy; the idle screen stays static and saves battery.
+    var spin = 0f
+    var pulse = 1f
+    if (on || busy) {
+        val transition = rememberInfiniteTransition()
+        spin = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart)
+        ).value
+        pulse = transition.animateFloat(
+            initialValue = 0.96f,
+            targetValue = 1.04f,
+            animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse)
+        ).value
+    }
     val ringColor by animateColorAsState(
         if (on) Palette.accent else Palette.textFaint,
         animationSpec = tween(600)
@@ -286,20 +291,20 @@ fun IconChip(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
             .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 4.dp, vertical = 6.dp)
+            .padding(horizontal = 6.dp, vertical = 8.dp)
     ) {
         Box(
             Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(13.dp))
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(Color.White.copy(alpha = 0.055f))
-                .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(15.dp)),
+                .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = label, tint = if (enabled) tint else Palette.textFaint, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = label, tint = if (enabled) tint else Palette.textFaint, modifier = Modifier.size(21.dp))
         }
-        Spacer(Modifier.height(4.dp))
-        Text(label, color = if (enabled) Palette.textDim else Palette.textFaint, fontSize = 10.5.sp)
+        Spacer(Modifier.height(5.dp))
+        Text(label, color = if (enabled) Palette.textDim else Palette.textFaint, fontSize = 11.sp)
     }
 }
 

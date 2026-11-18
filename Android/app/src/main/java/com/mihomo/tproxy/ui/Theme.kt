@@ -33,10 +33,10 @@ object Palette {
     var warn = Color(0xFFFBBF24); private set
     var danger = Color(0xFFFB7185); private set
     var text = Color(0xFFE9EDF7); private set
-    var textDim = Color(0xFF8A93A8); private set
-    var textFaint = Color(0xFF5A6377); private set
+    var textDim = Color(0xFFA4AEC3); private set
+    var textFaint = Color(0xFF7F8AA3); private set
     var card = Color(0x0DFFFFFF); private set
-    var cardBorder = Color(0x14FFFFFF); private set
+    var cardBorder = Color(0x0FFFFFFF); private set
     var cardTop = Color(0x1AFFFFFF); private set
     var cardBottom = Color(0x0AFFFFFF); private set
     var navBg = Color(0xD90B1020); private set
@@ -60,8 +60,8 @@ object Palette {
         bg0 = Color(0xFF05070D); bg1 = Color(0xFF0A0E18); bg2 = Color(0xFF0E1424)
         primary = Color(0xFF5B8CFF); primaryDim = Color(0xFF3355AA)
         accent = Color(0xFF22D3EE); ok = Color(0xFF34D399); warn = Color(0xFFFBBF24); danger = Color(0xFFFB7185)
-        text = Color(0xFFE9EDF7); textDim = Color(0xFF8A93A8); textFaint = Color(0xFF5A6377)
-        card = Color(0x0DFFFFFF); cardBorder = Color(0x14FFFFFF)
+        text = Color(0xFFE9EDF7); textDim = Color(0xFFA4AEC3); textFaint = Color(0xFF7F8AA3)
+        card = Color(0x0DFFFFFF); cardBorder = Color(0x0FFFFFFF)
         cardTop = Color(0x1AFFFFFF); cardBottom = Color(0x0AFFFFFF)
         navBg = Color(0xD90B1020); sheet = Color(0xFF1A2136)
         orbOffTop = Color(0xFF232A3A); orbOffBottom = Color(0xFF161B28); track = Color(0xFF232A3A)
@@ -73,8 +73,8 @@ object Palette {
         bg0 = Color(0xFFF3F5FA); bg1 = Color(0xFFFFFFFF); bg2 = Color(0xFFE7ECF5)
         primary = Color(0xFF3D6BFF); primaryDim = Color(0xFF2747B8)
         accent = Color(0xFF0E9BB5); ok = Color(0xFF0F9D63); warn = Color(0xFFB45309); danger = Color(0xFFDC2626)
-        text = Color(0xFF101828); textDim = Color(0xFF5B6577); textFaint = Color(0xFF8C95A6)
-        card = Color(0xFFFFFFFF); cardBorder = Color(0x14000000)
+        text = Color(0xFF101828); textDim = Color(0xFF667085); textFaint = Color(0xFF76818F)
+        card = Color(0xFFFFFFFF); cardBorder = Color(0x0F000000)
         cardTop = Color(0xFFFFFFFF); cardBottom = Color(0xFFF8FAFE)
         navBg = Color(0xF2FFFFFF); sheet = Color(0xFFFFFFFF)
         orbOffTop = Color(0xFFE3E9F4); orbOffBottom = Color(0xFFD2DAE8); track = Color(0xFFD7DEEA)
@@ -84,13 +84,13 @@ object Palette {
 }
 
 val AppTypography = Typography(
-    displayLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-1).sp),
+    displayLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.5).sp),
     headlineMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 24.sp, letterSpacing = (-0.3).sp),
     titleLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 15.sp),
+    titleMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 16.sp),
     bodyMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Normal, fontSize = 13.5.sp),
-    bodySmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Normal, fontSize = 12.sp),
-    labelSmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 0.4.sp)
+    bodySmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Normal, fontSize = 12.5.sp),
+    labelSmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 11.5.sp, letterSpacing = 0.4.sp)
 )
 
 @Composable

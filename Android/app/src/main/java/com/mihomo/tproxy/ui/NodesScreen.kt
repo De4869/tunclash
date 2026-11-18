@@ -185,26 +185,32 @@ fun NodeRow(name: String, info: NodeInfo?, selected: Boolean, onClick: () -> Uni
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (selected) Palette.primary.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.028f))
-            .border(1.dp, if (selected) Palette.primary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+            .background(if (selected) Palette.primary.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.028f))
             .clickableNoRipple { onClick() }
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Left accent bar for selected state
+        if (selected) {
+            Box(Modifier.width(3.dp).height(36.dp).clip(RoundedCornerShape(2.dp)).background(Palette.primary))
+            Spacer(Modifier.width(10.dp))
+        } else {
+            Spacer(Modifier.width(13.dp))
+        }
         Box(
-            Modifier.size(34.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)),
+            Modifier.size(36.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f)),
             contentAlignment = Alignment.Center
         ) {
             val flag = ConfigComposer.flagOf(name)
             val glyph = if (flag.isNotBlank()) flag else ConfigComposer.leadingEmoji(name)
-            Text(glyph, fontSize = 15.sp, color = Palette.textDim)
+            Text(glyph, fontSize = 16.sp, color = Palette.textDim)
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 name,
                 color = if (selected) Palette.text else Palette.text.copy(alpha = 0.92f),
-                fontSize = 13.5.sp,
+                fontSize = 14.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -213,13 +219,13 @@ fun NodeRow(name: String, info: NodeInfo?, selected: Boolean, onClick: () -> Uni
             Text(
                 (info?.type ?: "GROUP") + (if (info != null && info.udp) " · UDP" else ""),
                 color = Palette.textFaint,
-                fontSize = 10.sp
+                fontSize = 11.sp
             )
         }
         if (info != null) DelayPill(info.delay)
         if (selected) {
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Rounded.Check, null, tint = Palette.primary, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.Check, "当前节点", tint = Palette.primary, modifier = Modifier.size(20.dp))
         }
     }
 }

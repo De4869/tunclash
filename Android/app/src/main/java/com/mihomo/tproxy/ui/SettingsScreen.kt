@@ -413,7 +413,7 @@ fun SettingRow(
     title: String,
     subtitle: String? = null,
     onClick: (() -> Unit)? = null,
-    vertical: Int = 12,
+    vertical: Int = 14,
     trailing: @Composable (() -> Unit)? = null
 ) {
     Row(
@@ -429,16 +429,16 @@ fun SettingRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = Palette.text, fontSize = 13.5.sp)
+            Text(title, color = Palette.text, fontSize = 14.sp)
             if (!subtitle.isNullOrBlank()) {
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, color = Palette.textFaint, fontSize = 10.5.sp)
+                Text(subtitle, color = Palette.textFaint, fontSize = 11.5.sp)
             }
         }
         if (trailing != null) trailing()
         if (onClick != null) {
             Spacer(Modifier.width(4.dp))
-            Icon(Icons.Rounded.ChevronRight, null, tint = Palette.textFaint, modifier = Modifier.size(16.dp))
+            Icon(Icons.Rounded.ChevronRight, "打开", tint = Palette.textFaint, modifier = Modifier.size(18.dp))
         }
     }
 }
